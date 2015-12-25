@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Beads 3D</title>
+    <script src="bower_components/jquery/dist/jquery.min.js"></script>
+    <link href="bower_components/bootstrap/dist/css/bootstrap.min.css" rel="stylesheet"/>
+    <link href="bower_components/bootstrap/dist/css/bootstrap-theme.min.css" rel="stylesheet"/>
+    <script src="bower_components/bootstrap/dist/js/bootstrap.min.js"></script>
+    <script src="bower_components/three.js/three.min.js"></script>
+    <script src="bower_components/angular/angular.min.js"></script>
+    
+    <script src="app/ThreeCSG.js"></script>
+    <script src="app/OBJLoader.js"></script>
+  </head>
+  <body>
+    <script>
+
+			var container;
+
+			var camera, scene, renderer;
+
+			var mouseX = 0, mouseY = 0;
+
+			var windowHalfX = window.innerWidth / 2;
+			var windowHalfY = window.innerHeight / 2;
+
+
+			init();
+			animate();
+
+
+			function init() {
+
+				container = document.createElement( 'div' );
+				document.body.appendChild( container );
+
+				camera = new THREE.PerspectiveCamera( 45, window.innerWidth / window.innerHeight, 1, 2000 );
+				camera.position.z = 100;
+
+				// scene
+
+				scene = new THREE.Scene();
+
+				var ambient = new THREE.AmbientLight( 0xFFFFFF );
+				scene.add( ambient );
+
+				var manager = new THREE.LoadingManager();
+				manager.onProgress = function ( item, loaded, total ) {
+
+					console.log( item, loaded, total );
+
+				};
+
+				var onProgress = function ( xhr ) {
+					if ( xhr.lengthComputable ) {
+						var percentComplete = xhr.loaded / xhr.total * 100;
+						console.log( Math.round(percentComplete, 2) + '% downloaded' );
+					}
+				};
+
+				var onError = function ( xhr ) {
+				};
+
+				// model
+
+        //var ThreeBSP = initializeCSG(THREE);
+        
+				var loader = new THREE.OBJLoader( manager );
+				loader.load( 'models/pikachu.obj', function ( object ) {
+
+					object.position.y = 0;
+          object.scale.x = 15;
+          object.scale.y = 15;
+          object.scale.z = 15;
+          var objectBsp = new ThreeBSP(object.children[0]);
+          
+          var sphere = new THREE.SphereGeometry(3, 16, 16);
+          var sphereBsp = new ThreeBSP( sphere, {offset: {x: 0, y:0, z: 0}} );
+          var union = objectBsp.intersect(sphereBsp);
+          var mesh = new THREE.Mesh(union.toGeometry(), new THREE.MeshNormalMaterial);
+          mesh.geometry.computeFaceNormals();
+          scene.add(mesh);
+
+				}, onProgress, onError );
+
+				//
+
+				renderer = new THREE.WebGLRenderer();
+				renderer.setPixelRatio( window.devicePixelRatio );
+				renderer.setSize( window.innerWidth, window.innerHeight );
+				container.appendChild( renderer.domElement );
+
+				document.addEventListener( 'mousemove', onDocumentMouseMove, false );
+
+				//
+
+				window.addEventListener( 'resize', onWindowResize, false );
+
+			}
+
+			function onWindowResize() {
+
+				windowHalfX = window.innerWidth / 2;
+				windowHalfY = window.innerHeight / 2;
+
+				camera.aspect = window.innerWidth / window.innerHeight;
+				camera.updateProjectionMatrix();
+
+				renderer.setSize( window.innerWidth, window.innerHeight );
+
+			}
+
+			function onDocumentMouseMove( event ) {
+
+				mouseX = ( event.clientX - windowHalfX ) / 2;
+				mouseY = ( event.clientY - windowHalfY ) / 2;
+
+			}
+
+			//
+
+			function animate() {
+
+				requestAnimationFrame( animate );
+				render();
+
+			}
+
+			function render() {
+
+				camera.position.x += ( mouseX - camera.position.x ) * .05;
+				camera.position.y += ( - mouseY - camera.position.y ) * .05;
+
+				camera.lookAt( scene.position );
+
+				renderer.render( scene, camera );
+
+			}
+
+		</script>
+  </body>
+</html>

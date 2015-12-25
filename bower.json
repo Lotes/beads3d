@@ -1,0 +1,25 @@
+{
+  "name": "beads3d",
+  "version": "1.0.0",
+  "authors": [
+    "Lotes <markhoernchen@gmx.de>"
+  ],
+  "description": "",
+  "main": "index.php",
+  "moduleType": [],
+  "license": "MIT",
+  "homepage": "",
+  "private": true,
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "bower_components",
+    "test",
+    "tests"
+  ],
+  "dependencies": {
+    "angular": "~1.4.8",
+    "three.js": "~0.73.0",
+    "bootstrap": "~3.3.6"
+  }
+}
