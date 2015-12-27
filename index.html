@@ -13,6 +13,7 @@
     
     <script src="app/ThreeCSG.js"></script>
     <script src="app/OBJLoader.js"></script>
+    <script src="app/OrbitControls.js"></script>
   </head>
   <body>
     <script>
@@ -21,15 +22,8 @@
 
 			var camera, scene, renderer;
 
-			var mouseX = 0, mouseY = 0;
-
-			var windowHalfX = window.innerWidth / 2;
-			var windowHalfY = window.innerHeight / 2;
-
-
 			init();
 			animate();
-
 
 			function init() {
 
@@ -71,69 +65,46 @@
           var maxLength = Math.max(size.x, size.y, size.y);
           var scale = 1/maxLength;
           object.scale.set(scale, scale, scale);
-          object.position.set(-bbox.min.x*scale - size.x/2*scale, -bbox.min.y*scale - size.y/2*scale, -bbox.min.z*scale - size.z/2*scale);
+          object.position.set(
+            -bbox.min.x*scale - size.x/2*scale, 
+            -bbox.min.y*scale - size.y/2*scale, 
+            -bbox.min.z*scale - size.z/2*scale
+          );
           var objectBsp = new ThreeBSP(object);          
           var sphere = new THREE.SphereGeometry(0.5, 16, 16);
           var sphereBsp = new ThreeBSP( sphere, {offset: {x: 0, y:0, z: 0}} );
-          var union = objectBsp.union(sphereBsp);
+          var union = objectBsp.intersect(sphereBsp);
           var mesh = union.toMesh(new THREE.MeshNormalMaterial);
           mesh.geometry.computeFaceNormals();
           mesh.scale.set(50,50,50);
           scene.add(mesh);
 				}, onProgress, onError );
 
-				//
-
+				//renderer
 				renderer = new THREE.WebGLRenderer();
 				renderer.setPixelRatio( window.devicePixelRatio );
 				renderer.setSize( window.innerWidth, window.innerHeight );
 				container.appendChild( renderer.domElement );
 
-				document.addEventListener( 'mousemove', onDocumentMouseMove, false );
+				//controls
+        controls = new THREE.OrbitControls( camera, renderer.domElement );
+				controls.enableDamping = false;
+				controls.enableZoom = true;
 
-				//
-
+				//window events
 				window.addEventListener( 'resize', onWindowResize, false );
-
 			}
 
 			function onWindowResize() {
-
-				windowHalfX = window.innerWidth / 2;
-				windowHalfY = window.innerHeight / 2;
-
 				camera.aspect = window.innerWidth / window.innerHeight;
 				camera.updateProjectionMatrix();
-
 				renderer.setSize( window.innerWidth, window.innerHeight );
-
 			}
-
-			function onDocumentMouseMove( event ) {
-
-				mouseX = ( event.clientX - windowHalfX ) / 2;
-				mouseY = ( event.clientY - windowHalfY ) / 2;
-
-			}
-
-			//
 
 			function animate() {
-
 				requestAnimationFrame( animate );
-				render();
-
-			}
-
-			function render() {
-
-				camera.position.x += ( mouseX - camera.position.x ) * .05;
-				camera.position.y += ( - mouseY - camera.position.y ) * .05;
-
-				camera.lookAt( scene.position );
-
-				renderer.render( scene, camera );
-
+        controls.update();
+				renderer.render(scene, camera);
 			}
 
 		</script>
