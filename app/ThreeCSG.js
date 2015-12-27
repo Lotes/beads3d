@@ -11,32 +11,45 @@ window.ThreeBSP = (function() {
 		BACK = 2,
 		SPANNING = 3;
 	
-	ThreeBSP = function( geometry ) {
-		// Convert THREE.Geometry to ThreeBSP
+	ThreeBSP = function(object) {
 		var i, _length_i,
 			face, vertex, faceVertexUvs, uvs,
 			polygon,
 			polygons = [],
-			tree;
-	
-		if ( geometry instanceof THREE.Geometry ) {
+			tree,
+      geometry;
+    
+    //merge geometry
+    if(object instanceof THREE.Object3D) {
+      this.matrix = new THREE.Matrix4();
+      geometry = new THREE.Geometry();
+      object.updateMatrixWorld(true);
+      object.traverse(function(child) {
+        if(!(child instanceof THREE.Mesh))
+          return;
+        var meshGeometry = child.geometry;
+        if(meshGeometry instanceof THREE.BufferGeometry)
+          meshGeometry = new THREE.Geometry().fromBufferGeometry(meshGeometry);
+        var meshMatrix = child.matrixWorld.clone();
+        geometry.merge(meshGeometry, meshMatrix);
+      });
+    } if ( object instanceof THREE.Geometry ) {
 			this.matrix = new THREE.Matrix4();
-		} else if ( geometry instanceof THREE.Mesh ) {
-			// #todo: add hierarchy support
+      geometry = object;
+		} else if ( object instanceof THREE.Mesh ) {
+      geometry = object;
 			geometry.updateMatrix();
 			this.matrix = geometry.matrix.clone();
 			geometry = geometry.geometry;
-		} else if ( geometry instanceof ThreeBSP.Node ) {
-			this.tree = geometry;
+      if(geometry instanceof THREE.BufferGeometry)
+        geometry = new THREE.Geometry().fromBufferGeometry(geometry);
+		} else if ( object instanceof ThreeBSP.Node ) {
+			this.tree = object;
 			this.matrix = new THREE.Matrix4();
 			return this;
-		} else {
-			throw 'ThreeBSP: Given geometry is unsupported';
 		}
-    
-    if(geometry instanceof THREE.BufferGeometry)
-        geometry = new THREE.Geometry().fromBufferGeometry(geometry);
-	
+  
+    //create BSP tree
 		for ( i = 0, _length_i = geometry.faces.length; i < _length_i; i++ ) {
 			face = geometry.faces[i];
 			faceVertexUvs = geometry.faceVertexUvs[0][i];

@@ -64,25 +64,22 @@
 				};
 
 				// model
-
-        //var ThreeBSP = initializeCSG(THREE);
-        
 				var loader = new THREE.OBJLoader( manager );
 				loader.load( 'models/pikachu.obj', function ( object ) {
-
-					object.position.y = 0;
-          object.scale.x = 15;
-          object.scale.y = 15;
-          object.scale.z = 15;
-          var objectBsp = new ThreeBSP(object.children[0]);
-          
-          var sphere = new THREE.SphereGeometry(3, 16, 16);
+          var bbox = new THREE.Box3().setFromObject(object);
+          var size = bbox.size();
+          var maxLength = Math.max(size.x, size.y, size.y);
+          var scale = 1/maxLength;
+          object.scale.set(scale, scale, scale);
+          object.position.set(-bbox.min.x*scale - size.x/2*scale, -bbox.min.y*scale - size.y/2*scale, -bbox.min.z*scale - size.z/2*scale);
+          var objectBsp = new ThreeBSP(object);          
+          var sphere = new THREE.SphereGeometry(0.5, 16, 16);
           var sphereBsp = new ThreeBSP( sphere, {offset: {x: 0, y:0, z: 0}} );
-          var union = objectBsp.intersect(sphereBsp);
-          var mesh = new THREE.Mesh(union.toGeometry(), new THREE.MeshNormalMaterial);
+          var union = objectBsp.union(sphereBsp);
+          var mesh = union.toMesh(new THREE.MeshNormalMaterial);
           mesh.geometry.computeFaceNormals();
+          mesh.scale.set(50,50,50);
           scene.add(mesh);
-
 				}, onProgress, onError );
 
 				//
