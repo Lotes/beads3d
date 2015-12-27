@@ -1,6 +1,188 @@
-angular.module('beads3d', [])
-  .controller('MainController', function($scope, $q) {
+angular.module('beads3d', ['ui.bootstrap-slider'])
+  .controller('MainController', function($scope, $q, $interval) {
+    var material = new THREE.MeshBasicMaterial({color: 0x000000 });
+  
     $scope.object = null;
+    $scope.voxelHeap = null;
+    $scope.layers = [];
+    $scope.size = 20;
+    $scope.maxSize = 160;
+    
+    $scope.voxelSize = 1;
+    $scope.computing = false;
+    $scope.step = 1;
+    $scope.stepMax = 0;
+    $scope.workingPackages = [];
+  
+    $interval(function() {
+      if($scope.workingPackages.length === 0)
+        return;
+      var index = Math.floor(Math.random()*$scope.workingPackages.length);
+      var workingPackage = $scope.workingPackages[index];
+      $scope.workingPackages.splice(index, 1);
+      var bsp = workingPackage.bsp;
+      var layers = workingPackage.layers;
+      var xs = workingPackage.xs;
+      var ys = workingPackage.ys;
+      var layerIndex = layers[0];
+      var y = ys[0];
+      var x = xs[0];
+      var layerLength = layers[1]-layers[0]+1;
+      var xLength = xs[1]-xs[0]+1;
+      var yLength = ys[1]-ys[0]+1;
+      var geometry = new THREE.BoxGeometry(
+        $scope.voxelSize*xLength,
+        $scope.voxelSize*layerLength, 
+        $scope.voxelSize*yLength
+      );
+      var voxel = new THREE.Mesh(geometry, material);
+      voxel.position.set(
+        (x          + xLength    /2)*$scope.voxelSize,
+        (layerIndex + layerLength/2)*$scope.voxelSize,
+        (y          + yLength    /2)*$scope.voxelSize
+      );
+      var voxelBSP = new ThreeBSP(voxel);
+      var intersectionBSP = voxelBSP.intersect(bsp);
+      var mesh = intersectionBSP.toMesh(material);
+      var bbox = new THREE.Box3().setFromObject(mesh);
+      var size = bbox.size().length();
+      var present = isFinite(size) && size !== 0 && intersectionBSP.tree.polygons.length >= 3;
+      
+      if(layers[0] !== layers[1] || xs[0] !== xs[1] || ys[0] !== ys[1]) {
+        $scope.step++;
+        //split into sub work packages
+        var splitLayers = layers[0] !== layers[1];
+        var splitXs = xs[0] !== xs[1];
+        var splitYs = ys[0] !== ys[1];
+        var lmid = Math.floor((layers[0] + layers[1])/2);
+        var xmid = Math.floor((xs[0] + xs[1])/2);
+        var ymid = Math.floor((ys[0] + ys[1])/2);
+        function addWorkingPackage(lf, lt, xf, xt, yf, yt) {
+          var wp = {
+            layers: [lf, lt],
+            xs: [xf, xt],
+            ys: [yf, yt],
+            volume: (lt-lf+1)*(xt-xf+1)*(yt-yf+1),
+            bsp: intersectionBSP
+          };
+          $scope.workingPackages.push(wp);
+        }
+        if(splitLayers) {
+          if(splitXs) {
+            if(splitYs) {
+              addWorkingPackage(layers[0], lmid,      xs[0],   xmid, ys[0],  ymid);
+              addWorkingPackage(layers[0], lmid,      xs[0],   xmid, ymid+1, ys[1]);
+              addWorkingPackage(layers[0], lmid,      xmid+1, xs[1], ys[0],  ymid);
+              addWorkingPackage(layers[0], lmid,      xmid+1, xs[1], ymid+1, ys[1]);
+              addWorkingPackage(lmid+1,    layers[1], xs[0],   xmid, ys[0],  ymid);
+              addWorkingPackage(lmid+1,    layers[1], xs[0],   xmid, ymid+1, ys[1]);
+              addWorkingPackage(lmid+1,    layers[1], xmid+1, xs[1], ys[0],  ymid);
+              addWorkingPackage(lmid+1,    layers[1], xmid+1, xs[1], ymid+1, ys[1]);
+            } else {
+              addWorkingPackage(layers[0],   lmid,    xs[0],   xmid, ys[0],  ys[1]);
+              addWorkingPackage(layers[0],   lmid,    xmid+1, xs[1], ys[0],  ys[1]);
+              addWorkingPackage(lmid+1,    layers[1], xs[0],   xmid, ys[0],  ys[1]);
+              addWorkingPackage(lmid+1,    layers[1], xmid+1, xs[1], ys[0],  ys[1]);
+            }    
+          } else {
+            if(splitYs) {
+              addWorkingPackage(layers[0], lmid,      xs[0],   xs[1], ys[0],  ymid);
+              addWorkingPackage(layers[0], lmid,      xs[0],   xs[1], ymid+1, ys[1]);
+              addWorkingPackage(lmid+1,    layers[1], xs[0],   xs[1], ys[0],  ymid);
+              addWorkingPackage(lmid+1,    layers[1], xs[0],   xs[1], ymid+1, ys[1]);
+            } else {
+              addWorkingPackage(layers[0], lmid,      xs[0],   xs[1], ys[0],  ys[1]);
+              addWorkingPackage(lmid+1,    layers[1], xs[0],   xs[1], ys[0],  ys[1]);
+            }    
+          }  
+        } else {
+          if(splitXs) {
+            if(splitYs) {
+              addWorkingPackage(layers[0], layers[1], xs[0],   xmid, ys[0],  ymid);
+              addWorkingPackage(layers[0], layers[1], xs[0],   xmid, ymid+1, ys[1]);
+              addWorkingPackage(layers[0], layers[1], xmid+1, xs[1], ys[0],  ymid);
+              addWorkingPackage(layers[0], layers[1], xmid+1, xs[1], ymid+1, ys[1]);
+            } else {
+              addWorkingPackage(layers[0], layers[1], xs[0],   xmid, ys[0],  ys[1]);
+              addWorkingPackage(layers[0], layers[1], xmid+1, xs[1], ys[0],  ys[1]);
+            }    
+          } else {
+            if(splitYs) {
+              addWorkingPackage(layers[0], layers[1], xs[0],   xs[1], ys[0],  ymid);
+              addWorkingPackage(layers[0], layers[1], xs[0],   xs[1], ymid+1, ys[1]);
+            } else {
+              //empty, no packages
+            }    
+          }  
+        }
+      } else {        
+        if(present) {
+          $scope.layers[layerIndex][y][x] = 0xffffff;      
+          $scope.voxelHeap.add(mesh);
+        }
+        $scope.step++;
+      }
+    }, 10);
+  
+    function voxelify() {
+      var model = $scope.object;
+      var size = $scope.size;
+      if(!model)
+        return;
+      $scope.workingPackages = [];
+      $scope.voxelSize = 1/size;
+      var modelBSP = new ThreeBSP(model);
+      var result = [];
+      for(var layerIndex=0; layerIndex<size; layerIndex++) {
+        var rows = [];
+        for(var y=0; y<size; y++) {
+          var columns = [];
+          for(var x=0; x<size; x++) {
+            columns.push(null);
+          }
+          rows.push(columns);
+        }
+        result.push(rows);
+      }
+      $scope.workingPackages.push({
+        layers: [0, size-1],
+        xs: [0, size-1],
+        ys: [0, size-1],
+        volume: size*size*size,
+        bsp: modelBSP
+      });
+      $scope.step = 0;
+      $scope.stepMax = 2*size*size*size-1;
+      $scope.layers = result;
+      $scope.voxelHeap = new THREE.Object3D();
+    }
+    
+    function meshify() {
+      var result = new THREE.Object3D();
+      var size = $scope.layers.length;
+      var voxelSize = 1/size;
+      for(var layerIndex=0; layerIndex<size; layerIndex++)
+        for(var y=0; y<size; y++)
+          for(var x=0; x<size; x++) {
+            var color = $scope.layers[layerIndex][y][x];
+            if(color) {
+              var material = new THREE.MeshBasicMaterial({color: color});
+              var geometry = new THREE.BoxGeometry(voxelSize, voxelSize, voxelSize);
+              var voxel = new THREE.Mesh(geometry, material);
+              voxel.position.set(
+                (x+0.5)*voxelSize,
+                (layerIndex+0.5)*voxelSize,
+                (y+0.5)*voxelSize
+              );  
+              result.add(voxel);
+            }  
+          }
+      $scope.voxelHeap = result;
+    }
+    
+    $scope.$watch('object', voxelify);
+    $scope.$watch('size', voxelify);
+    //$interval(meshify, 500);
   
     $scope.load = function(url) {
       var deferred = $q.defer();
@@ -23,8 +205,9 @@ angular.module('beads3d', [])
             -bbox.min.y*scale, 
             -bbox.min.z*scale
           );
+          var bbox = new THREE.Box3().setFromObject(object);
           //return
-          $scope.object = object;        
+          $scope.object = object;            
           deferred.resolve(object);
         }
         $scope.$apply();
@@ -63,8 +246,9 @@ angular.module('beads3d', [])
         }
       
 				camera = new THREE.PerspectiveCamera( 45, window.innerWidth / window.innerHeight, 1, 2000 );
-				camera.position.z = 2;
-
+        camera.position.set(2, 2, 2)
+        camera.lookAt(new THREE.Vector3())
+    
 				// scene
 				scene = new THREE.Scene();
 				var ambient = new THREE.AmbientLight(0xFFFFFF);
@@ -96,11 +280,11 @@ angular.module('beads3d', [])
             scene.add(newValue);
             
             var bbox = new THREE.Box3().setFromObject(newValue);
-            controls.target.set(
+            camera.lookAt(new THREE.Vector3(
               (bbox.min.x + bbox.max.x)/2,
               (bbox.min.y + bbox.max.y)/2,
               (bbox.min.z + bbox.max.z)/2
-            );
+            ));
           }
         });
       },
