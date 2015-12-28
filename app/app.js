@@ -5,7 +5,7 @@ angular.module('beads3d', ['ui.bootstrap-slider'])
     $scope.object = null;
     $scope.voxelHeap = null;
     $scope.layers = [];
-    $scope.size = 20;
+    $scope.size = 8;
     $scope.maxSize = 160;
     
     $scope.voxelSize = 1;
@@ -46,7 +46,7 @@ angular.module('beads3d', ['ui.bootstrap-slider'])
       var mesh = intersectionBSP.toMesh(material);
       var bbox = new THREE.Box3().setFromObject(mesh);
       var size = bbox.size().length();
-      var present = isFinite(size) && size !== 0 && intersectionBSP.tree.polygons.length >= 3;
+      var present = isFinite(size) && size !== 0;
       
       if(layers[0] !== layers[1] || xs[0] !== xs[1] || ys[0] !== ys[1]) {
         $scope.step++;
