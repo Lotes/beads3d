@@ -89,7 +89,29 @@ struct BoundingBox {
 struct Range {
 	Vector3<int> min;
 	Vector3<int> max;
+	Range() : min(0,0,0), max(0,0,0) {}
 	Range(Vector3<int> min, Vector3<int> max) : min(min), max(max) {}
+	bool isSplittable() {
+		return min.x != max.x || min.y != max.y || min.z != max.z;
+	}
+	bool split(Range& left, Range& right) {
+		if(!isSplittable())
+			return false;
+		if(min.x != max.x) { //x varies
+		    int middle = (min.x + max.x) / 2;
+			left = Range(min, Vector3<int>(middle, max.y, max.z));
+			right = Range(Vector3<int>(middle+1, min.y, min.z), max);
+		} else if(min.y != max.y) { //y varies, x is fix
+			int middle = (min.y + max.y) / 2;
+			left = Range(min, Vector3<int>(max.x, middle, max.z));
+			right = Range(Vector3<int>(min.x, middle+1, min.z), max);
+		} else { //z varies, x and y are fix
+			int middle = (min.z + max.z) / 2;
+			left = Range(min, Vector3<int>(max.x, max.y, middle));
+			right = Range(Vector3<int>(min.x, min.y, middle+1), max);
+		}
+		return true;
+	}
 };
 
 class Object {
@@ -184,10 +206,6 @@ private:
 	list<Vector3<float>> vertices;
 	list<Vector3<int>> faces;
 };
-
-void compute(int maxSize, bool* voxels, csgjs_model& model, Range& range) {
-	
-}
 
 csgjs_vertex createVertex(float x, float y, float z)  {
 	csgjs_vertex result;
@@ -288,13 +306,51 @@ csgjs_model createCube(Vector3<float> min, Vector3<float> size) {
 	return cube;
 }
 
+void compute(int size, bool* voxels, csgjs_model& model, Range& range) {
+	Range left;
+	Range right;
+	bool present;
+	
+	/*
+	cout << "[";
+	cout << range.min.x << "-" << range.max.x << ",";
+	cout << range.min.y << "-" << range.max.y << ",";
+	cout << range.min.z << "-" << range.max.z;
+	cout << "] ";
+	*/
+	
+	//test intersection
+	float scale = 1.0f/size;
+	Vector3<float> offset(range.min.x*scale, range.min.y*scale, range.min.z*scale);
+	Vector3<float> sizes(
+		(range.max.x - range.min.x + 1)*scale,
+		(range.max.y - range.min.y + 1)*scale,
+		(range.max.z - range.min.z + 1)*scale
+	);
+	csgjs_model cube = createCube(offset, sizes);
+	csgjs_model intersection = csgjs_intersection(model, cube);
+	present = intersection.vertices.size() > 0;
+	
+	//recursion
+	if(range.split(left, right)) {
+		compute(size, voxels, intersection, left);
+		compute(size, voxels, intersection, right);
+	} else {
+		int x = range.min.x;
+		int y = range.min.y;
+		int z = range.min.z;
+		int index = x + size * (y + size * z);
+		voxels[index] = present;
+	}
+}
+
 int main() {
 	//config
-	int size = 20;
+	int size = 5;
 	Object obj("../models/pikachu.obj");
 	
 	//preparation
-	bool* voxels = new bool[size*size*size]; 
+	bool* voxels = (bool*)malloc(size*size*size); 
 	memset(voxels, 0, size*size*size);
 	obj.normalize();
 	csgjs_model model = obj.toModel();
@@ -303,7 +359,29 @@ int main() {
 	Range range(Vector3<int>(0, 0, 0), Vector3<int>(size-1, size-1, size-1));
 	compute(size, voxels, model, range);
 	
+	//print
+	cout << "[" << endl;
+	for(int z=0; z<size; z++) {
+		cout << "\t[" << endl;
+		for(int y=0; y<size; y++) {
+			cout << "\t\t\"";
+			for(int x=0; x<size; x++) {
+				int index = x + size * (y + size * z);
+				cout << voxels[index];
+			}
+			cout << "\"";
+			if(y<size-1)
+				cout << ",";
+			cout << endl;
+		}
+		cout << "\t]";
+		if(z<size-1)
+			cout << ",";
+		cout << endl;
+	}
+	cout << "]" << endl;
+	
 	//clean up
-	delete[] voxels;
+	free(voxels);
 	return 0;
 }

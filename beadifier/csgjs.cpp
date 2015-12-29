@@ -13,6 +13,8 @@
 //
 
 #include "csgjs.h"
+#include <iostream>
+
 #ifndef CSGJS_HEADER_ONLY
 
 // `CSG.Plane.EPSILON` is the tolerance used by `splitPolygon()` to decide if a
@@ -356,7 +358,8 @@ void csgjs_csgnode::build(const std::vector<csgjs_polygon> & list)
 	if (!list.size()) return;
 	if (!this->plane.ok()) this->plane = list[0].plane;
 	std::vector<csgjs_polygon> list_front, list_back;
-	for (size_t i = 0; i < list.size(); i++) 
+	
+	for (size_t i = 1; i < list.size(); i++) //TODO 1 --> 0
 	{
 		this->plane.splitPolygon(list[i], this->polygons, this->polygons, list_front, list_back);
 	}
