@@ -22,6 +22,9 @@ public:
 	Vector3<T> multiplyScalar(const T scalar) const {
 		return Vector3<T>(x*scalar, y*scalar, z*scalar);
 	}
+	Vector3<T> multiply(const Vector3<T>& vector) const {
+		return Vector3<T>(x*vector.x, y*vector.y, z*vector.z);
+	}
 	Vector3<T> add(const Vector3<T>& other) const {
 		return Vector3<T>(x+other.x, y+other.y, z+other.z);
 	}
@@ -209,6 +212,7 @@ public:
 		}
 	}
 	void invert() {
+		_node.flip();
 		for(vector<Triangle>::iterator it=_content.begin(); it!=_content.end(); it++)
 			it->flip();
 		if(_front) _front->invert();
@@ -216,7 +220,7 @@ public:
 		swap(_front, _back);
 	}
 	
-	static inline BSPTree* Union(const BSPTree& A, const BSPTree& B) {
+	static inline BSPTree Union(const BSPTree& A, const BSPTree& B) {
 		BSPTree a = A;
 		BSPTree b = B;
 		a.clipTo(b);
@@ -225,10 +229,10 @@ public:
 		b.clipTo(a);
 		b.invert();
 		a.build(b.toList());
-		return new BSPTree(a.toList());
+		return BSPTree(a.toList());
 	}
 
-	static inline BSPTree* Subtract(const BSPTree& A, const BSPTree& B) {
+	static inline BSPTree Subtract(const BSPTree& A, const BSPTree& B) {
 		BSPTree a = A;
 		BSPTree b = B;
 		a.invert();
@@ -239,10 +243,10 @@ public:
 		b.invert();
 		a.build(b.toList());
 		a.invert();
-		return new BSPTree(a.toList());
+		return BSPTree(a.toList());
 	}
 
-	static inline BSPTree* Intersect(const BSPTree& A, const BSPTree& B) {
+	static inline BSPTree Intersect(const BSPTree& A, const BSPTree& B) {
 		BSPTree a = A;
 		BSPTree b = B;
 		a.invert();
@@ -252,7 +256,7 @@ public:
 		b.clipTo(a);
 		a.build(b.toList());
 		a.invert();
-		return new BSPTree(a.toList());
+		return BSPTree(a.toList());
 	}
 private:
 	vector<Triangle> clip(const vector<Triangle>& triangles) const {

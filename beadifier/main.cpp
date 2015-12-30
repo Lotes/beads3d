@@ -3,10 +3,10 @@
 #include <string>
 #include <boost/regex.hpp>
 #include <fstream>
+#include <vector>
 #include <list>
 #include <sstream>
 #include <math.h>
-#include "csgjs.h"
 #include "csg.h"
  
 using namespace std;
@@ -93,7 +93,7 @@ public:
 	}
 	BoundingBox bbox() {
 		BoundingBox box;
-		for(list<Vector3<float>>::iterator it=vertices.begin(); it!=vertices.end(); it++)
+		for(vector<Vector3<float>>::iterator it=vertices.begin(); it!=vertices.end(); it++)
 			box.add(*it);
 		return box;
 	}
@@ -101,26 +101,21 @@ public:
 		BoundingBox box = bbox();
 		Vector3<float> size = box.size();
 		float scale = 1.0f / fmaxf(size.x, fmaxf(size.y, size.z));
-		for(list<Vector3<float>>::iterator it=vertices.begin(); it!=vertices.end(); it++) {
+		for(vector<Vector3<float>>::iterator it=vertices.begin(); it!=vertices.end(); it++) {
 			it->x = (it->x - box.min.x) * scale;
 			it->y = (it->y - box.min.y) * scale;
 			it->z = (it->z - box.min.z) * scale;
 		}
 	}
-	csgjs_model toModel() {
-		csgjs_model result;
-		for(list<Vector3<float>>::iterator it=vertices.begin(); it!=vertices.end(); it++) {
-			csgjs_vertex vertex;
-			csgjs_vector position(it->x, it->y, it->z);
-			vertex.pos = position;
-			result.vertices.push_back(vertex);
-		}
-		for(list<Vector3<int>>::iterator it=faces.begin(); it!=faces.end(); it++) {
-			result.indices.push_back(it->x);
-			result.indices.push_back(it->y);
-			result.indices.push_back(it->z);
-		}
-		return result;
+	BSPTree toTree() {
+		vector<Triangle> triangles;
+		for(vector<Vector3<int>>::iterator it=faces.begin(); it!=faces.end(); it++)
+			triangles.push_back(Triangle(
+				vertices[it->x],
+				vertices[it->y],
+				vertices[it->z]
+			));
+		return BSPTree(triangles);
 	}
 private:
 	float tofloat(const string& s) {
@@ -151,121 +146,135 @@ private:
 		Vector3<int> f(a, b, c);
 		faces.push_back(f);
 	}
-	list<Vector3<float>> vertices;
-	list<Vector3<int>> faces;
+	vector<Vector3<float>> vertices;
+	vector<Vector3<int>> faces;
 };
 
-csgjs_vertex createVertex(float x, float y, float z)  {
-	csgjs_vertex result;
-	result.pos.x = x;
-	result.pos.y = y;
-	result.pos.z = z;
-	return result;
-}
+/*BSPTree createCube(Vector3<float> min, Vector3<float> size) {
+	vector<Triangle> triangles;
+	
+	Vector3<float> halfSize = size.multiplyScalar(0.5f);
+	Vector3<float> normals[] = {
+		Vector3<float>(+1, 0, 0),
+		Vector3<float>(-1, 0, 0),
+		Vector3<float>(0, +1, 0),
+		Vector3<float>(0, -1, 0),
+		Vector3<float>(0, 0, +1),
+		Vector3<float>(0, 0, -1)
+	};
+	for(int index=0;)
+	
+	return BSPTree(triangles);
+}*/
 
-csgjs_model createCube(Vector3<float> min, Vector3<float> size) {
-	csgjs_model cube;
+BSPTree createCube(Vector3<float> min, Vector3<float> size) {
+	/*float GAMMA = 0.00001f;
+	min = min.add(Vector3<float>(GAMMA, GAMMA, GAMMA));
+	size = size.subtract(Vector3<float>(2*GAMMA, 2*GAMMA, 2*GAMMA));*/
+	
+	vector<Vector3<float>> vertices;
+	vector<int> indices;
+	vector<Triangle> triangles;
 	Vector3<float> max = min.add(size);
 	//https://developer.mozilla.org/en-US/docs/Web/API/WebGL_API/Tutorial/Creating_3D_objects_using_WebGL
 	// Front face
-	cube.vertices.push_back(createVertex(min.x, min.y, max.z));//  -1.0, -1.0,  1.0,
-	cube.vertices.push_back(createVertex(max.x, min.y, max.z));//   1.0, -1.0,  1.0,
-	cube.vertices.push_back(createVertex(max.x, max.y, max.z));//   1.0,  1.0,  1.0,
-	cube.vertices.push_back(createVertex(min.x, max.y, max.z));//  -1.0,  1.0,  1.0,
+	vertices.push_back(Vector3<float>(min.x, min.y, max.z));//  -1.0, -1.0,  1.0,
+	vertices.push_back(Vector3<float>(max.x, min.y, max.z));//   1.0, -1.0,  1.0,
+	vertices.push_back(Vector3<float>(max.x, max.y, max.z));//   1.0,  1.0,  1.0,
+	vertices.push_back(Vector3<float>(min.x, max.y, max.z));//  -1.0,  1.0,  1.0,
 	  
 	// Back face
-	cube.vertices.push_back(createVertex(min.x, min.y, min.z));//  -1.0, -1.0, -1.0,
-	cube.vertices.push_back(createVertex(min.x, max.y, min.z));//  -1.0,  1.0, -1.0,
-	cube.vertices.push_back(createVertex(max.x, max.y, min.z));//   1.0,  1.0, -1.0,
-	cube.vertices.push_back(createVertex(max.x, min.y, min.z));//   1.0, -1.0, -1.0,
+	vertices.push_back(Vector3<float>(min.x, min.y, min.z));//  -1.0, -1.0, -1.0,
+	vertices.push_back(Vector3<float>(min.x, max.y, min.z));//  -1.0,  1.0, -1.0,
+	vertices.push_back(Vector3<float>(max.x, max.y, min.z));//   1.0,  1.0, -1.0,
+	vertices.push_back(Vector3<float>(max.x, min.y, min.z));//   1.0, -1.0, -1.0,
 	  
 	// Top face
-	cube.vertices.push_back(createVertex(min.x, max.y, min.z));//  -1.0,  1.0, -1.0,
-	cube.vertices.push_back(createVertex(min.x, max.y, max.z));//  -1.0,  1.0,  1.0,
-	cube.vertices.push_back(createVertex(max.x, max.y, max.z));//   1.0,  1.0,  1.0,
-	cube.vertices.push_back(createVertex(max.x, max.y, min.z));//   1.0,  1.0, -1.0,
+	vertices.push_back(Vector3<float>(min.x, max.y, min.z));//  -1.0,  1.0, -1.0,
+	vertices.push_back(Vector3<float>(min.x, max.y, max.z));//  -1.0,  1.0,  1.0,
+	vertices.push_back(Vector3<float>(max.x, max.y, max.z));//   1.0,  1.0,  1.0,
+	vertices.push_back(Vector3<float>(max.x, max.y, min.z));//   1.0,  1.0, -1.0,
 	  
 	// Bottom face
-	cube.vertices.push_back(createVertex(min.x, min.y, min.z));//  -1.0, -1.0, -1.0,
-	cube.vertices.push_back(createVertex(max.x, min.y, min.z));//   1.0, -1.0, -1.0,
-	cube.vertices.push_back(createVertex(max.x, min.y, max.z));//   1.0, -1.0,  1.0,
-	cube.vertices.push_back(createVertex(min.x, min.y, max.z));//  -1.0, -1.0,  1.0,
+	vertices.push_back(Vector3<float>(min.x, min.y, min.z));//  -1.0, -1.0, -1.0,
+	vertices.push_back(Vector3<float>(max.x, min.y, min.z));//   1.0, -1.0, -1.0,
+	vertices.push_back(Vector3<float>(max.x, min.y, max.z));//   1.0, -1.0,  1.0,
+	vertices.push_back(Vector3<float>(min.x, min.y, max.z));//  -1.0, -1.0,  1.0,
 	  
 	// Right face
-	cube.vertices.push_back(createVertex(max.x, min.y, min.z));//   1.0, -1.0, -1.0,
-	cube.vertices.push_back(createVertex(max.x, max.y, min.z));//   1.0,  1.0, -1.0,
-	cube.vertices.push_back(createVertex(max.x, max.y, max.z));//   1.0,  1.0,  1.0,
-	cube.vertices.push_back(createVertex(max.x, min.y, max.z));//   1.0, -1.0,  1.0,
+	vertices.push_back(Vector3<float>(max.x, min.y, min.z));//   1.0, -1.0, -1.0,
+	vertices.push_back(Vector3<float>(max.x, max.y, min.z));//   1.0,  1.0, -1.0,
+	vertices.push_back(Vector3<float>(max.x, max.y, max.z));//   1.0,  1.0,  1.0,
+	vertices.push_back(Vector3<float>(max.x, min.y, max.z));//   1.0, -1.0,  1.0,
 	  
 	// Left face
-	cube.vertices.push_back(createVertex(min.x, min.y, min.z));//  -1.0, -1.0, -1.0,
-	cube.vertices.push_back(createVertex(min.x, min.y, max.z));//  -1.0, -1.0,  1.0,
-	cube.vertices.push_back(createVertex(min.x, max.y, max.z));//  -1.0,  1.0,  1.0,
-	cube.vertices.push_back(createVertex(min.x, max.y, min.z));//  -1.0,  1.0, -1.0
+	vertices.push_back(Vector3<float>(min.x, min.y, min.z));//  -1.0, -1.0, -1.0,
+	vertices.push_back(Vector3<float>(min.x, min.y, max.z));//  -1.0, -1.0,  1.0,
+	vertices.push_back(Vector3<float>(min.x, max.y, max.z));//  -1.0,  1.0,  1.0,
+	vertices.push_back(Vector3<float>(min.x, max.y, min.z));//  -1.0,  1.0, -1.0
 	
 	//front
-	cube.indices.push_back(0);
-	cube.indices.push_back(1);
-	cube.indices.push_back(2);
-	cube.indices.push_back(0);
-	cube.indices.push_back(2);
-	cube.indices.push_back(3);
+	indices.push_back(0);
+	indices.push_back(1);
+	indices.push_back(2);
+	indices.push_back(0);
+	indices.push_back(2);
+	indices.push_back(3);
 
 	//back
-	cube.indices.push_back(4);
-	cube.indices.push_back(5);
-	cube.indices.push_back(6);
-	cube.indices.push_back(4);
-	cube.indices.push_back(6);
-	cube.indices.push_back(7);
+	indices.push_back(4);
+	indices.push_back(5);
+	indices.push_back(6);
+	indices.push_back(4);
+	indices.push_back(6);
+	indices.push_back(7);
 	
 	//top
-	cube.indices.push_back(8);
-	cube.indices.push_back(9);
-	cube.indices.push_back(10);
-	cube.indices.push_back(8);
-	cube.indices.push_back(10);
-	cube.indices.push_back(11);
+	indices.push_back(8);
+	indices.push_back(9);
+	indices.push_back(10);
+	indices.push_back(8);
+	indices.push_back(10);
+	indices.push_back(11);
 	
 	//bottom
-	cube.indices.push_back(12);
-	cube.indices.push_back(13);
-	cube.indices.push_back(14);
-	cube.indices.push_back(12);
-	cube.indices.push_back(14);
-	cube.indices.push_back(15);
+	indices.push_back(12);
+	indices.push_back(13);
+	indices.push_back(14);
+	indices.push_back(12);
+	indices.push_back(14);
+	indices.push_back(15);
 	
 	//right
-	cube.indices.push_back(16);
-	cube.indices.push_back(17);
-	cube.indices.push_back(18);
-	cube.indices.push_back(16);
-	cube.indices.push_back(18);
-	cube.indices.push_back(19);
+	indices.push_back(16);
+	indices.push_back(17);
+	indices.push_back(18);
+	indices.push_back(16);
+	indices.push_back(18);
+	indices.push_back(19);
 	
 	//left
-	cube.indices.push_back(20);
-	cube.indices.push_back(21);
-	cube.indices.push_back(22);
-	cube.indices.push_back(20);
-	cube.indices.push_back(22);
-	cube.indices.push_back(23);
+	indices.push_back(20);
+	indices.push_back(21);
+	indices.push_back(22);
+	indices.push_back(20);
+	indices.push_back(22);
+	indices.push_back(23);
 	
-	return cube;
+	//triangles
+	for(int index=0; index<indices.size(); index+=3)
+		triangles.push_back(Triangle(vertices[index], vertices[index+1], vertices[index+2]));
+
+	//BSPTree
+	return BSPTree(triangles);
 }
 
-void compute(int size, bool* voxels, csgjs_model& model, Range& range) {
+void compute(int size, bool* voxels, BSPTree& model, Range& range) {
 	Range left;
 	Range right;
 	bool present;
 	
-	/*
-	cout << "[";
-	cout << range.min.x << "-" << range.max.x << ",";
-	cout << range.min.y << "-" << range.max.y << ",";
-	cout << range.min.z << "-" << range.max.z;
-	cout << "] ";
-	*/
+	cout << model.toList().size() << endl;
 	
 	//test intersection
 	float scale = 1.0f/size;
@@ -275,9 +284,12 @@ void compute(int size, bool* voxels, csgjs_model& model, Range& range) {
 		(range.max.y - range.min.y + 1)*scale,
 		(range.max.z - range.min.z + 1)*scale
 	);
-	csgjs_model cube = createCube(offset, sizes);
-	csgjs_model intersection = csgjs_intersection(model, cube);
-	present = intersection.vertices.size() > 0;
+	BSPTree cube = createCube(offset, sizes);
+	BSPTree intersection = BSPTree::Intersect(model, cube);
+	present = !intersection.empty();
+	
+	if(!present)
+		return;
 	
 	//recursion
 	if(range.split(left, right)) {
@@ -294,14 +306,15 @@ void compute(int size, bool* voxels, csgjs_model& model, Range& range) {
 
 int main() {
 	//config
-	int size = 5;
+	int size = 10;
 	Object obj("../models/pikachu.obj");
 	
 	//preparation
 	bool* voxels = (bool*)malloc(size*size*size); 
 	memset(voxels, 0, size*size*size);
 	obj.normalize();
-	csgjs_model model = obj.toModel();
+	//BSPTree model = obj.toTree();
+	BSPTree model = createCube(Vector3<float>(0,0,0), Vector3<float>(0.5f, 0.5f, 0.5f));
 	
 	//computation
 	Range range(Vector3<int>(0, 0, 0), Vector3<int>(size-1, size-1, size-1));
@@ -315,7 +328,7 @@ int main() {
 			cout << "\t\t\"";
 			for(int x=0; x<size; x++) {
 				int index = x + size * (y + size * z);
-				cout << voxels[index];
+				cout << (voxels[index] ? "X" : " ");
 			}
 			cout << "\"";
 			if(y<size-1)
