@@ -14,3 +14,9 @@ html, body {
   width: 50%;
   height: 100%;
 }
+
+#upload-zone {
+	border: blue dashed 1px;
+	height: 100px;
+	text-align: center;
+}

@@ -15,8 +15,8 @@
     "grunt-php": "^1.5.1"
   },
   "dependencies": {
+    "body-parser": "^1.14.2",
     "express": "^4.13.3",
-    "socket.io": "^1.3.7",
-    "three-js-csg": "^72.0.0"
+    "socket.io": "^1.3.7"
   }
 }

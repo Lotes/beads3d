@@ -257,6 +257,7 @@ void printResult(int size, bool* voxels, ostream& stream) {
 		stream << endl;
 	}
 	stream << "]" << endl;
+	stream.flush();
 }
 
 int main(int argc, char *argv[]) {
@@ -289,6 +290,7 @@ int main(int argc, char *argv[]) {
 	if(outputFileName) {
 		ofstream out(outputFileName);
 		printResult(size, voxels, out);
+		out.close();
 	}
 	else
 		printResult(size, voxels, cout);

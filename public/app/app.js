@@ -1,18 +1,35 @@
+Dropzone.options.myAwesomeDropzone = {
+  paramName: "file",
+  maxFilesize: 5, // MB
+  accept: function(file, done) {
+	if(file.name.toLowerCase().indexOf('.obj') != file.name.length - 4) 
+		done('Only OBJ files are accepted!');
+    else 
+		done();
+  }
+};
+
 angular.module('beads3d', ['ui.bootstrap-slider'])
   .controller('MainController', function($scope, $q, $interval) {
-    var material = new THREE.MeshBasicMaterial({color: 0x000000 });
-	var socket;
+    var uploadZone = new Dropzone('div#upload-zone', { url: '/upload' });
+	uploadZone.on('complete', function(data) {
+		console.log(data);
+	});
+	
+	var material = new THREE.MeshBasicMaterial({color: 0x000000 });
+	var socket = io.connect();
   
-	$scope.size = 20;
-	$scope.maxSize = 100;
+	$scope.url = 'models/pikachu.obj';
+	$scope.size = 10;
+	$scope.maxSize = 40;
   
 	$scope.step = 0;
 	$scope.stepMax = 100;
     $scope.object = new THREE.Object3D();
 	
-    $scope.load = function(url) {
+    $scope.load = function() {
+	  var url = $scope.url;
       var size = $scope.size;
-	  socket = io.connect();
 	  socket.emit('initialize', {
 		  fileName: url,
 		  size: size
@@ -23,7 +40,6 @@ angular.module('beads3d', ['ui.bootstrap-slider'])
 		$scope.$apply();
 	  });
 	  socket.on('result', function(data) {
-		console.log(data);
 		$scope.object = new THREE.Object3D();
 		var material = new THREE.MeshBasicMaterial({ color: 0xFFFFFF });	
 		var cube = new THREE.BoxGeometry(1, 1, 1);
@@ -39,6 +55,8 @@ angular.module('beads3d', ['ui.bootstrap-slider'])
 		$scope.$apply();
 	  });
     };
+	
+	$scope.$watch('size', $scope.load);
   })
   .directive('viewer', function() {
     return {

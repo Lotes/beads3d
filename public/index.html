@@ -13,6 +13,7 @@
     
     <script src="app/OBJLoader.js"></script>
     <script src="app/OrbitControls.js"></script>
+    <script src="app/dropzone.js"></script>
     <script src="/bower_components/socket.io-client/socket.io.js"></script>
 	
     <link href="bower_components/seiyria-bootstrap-slider/dist/css/bootstrap-slider.min.css" rel="stylesheet"/>
@@ -22,14 +23,22 @@
     <link href="app/style.css" rel="stylesheet"/>
     <script src="app/app.js"></script>
   </head>
-  <body ng-controller="MainController" ng-init="load('models/pikachu.obj')">
-    <div id="left-panel">
-      Maximal size ({{size}}):
-      <slider ng-model="size" min="1" step="1" max="maxSize"></slider>
-      <p>{{step}} / {{stepMax}}</p>
-    </div>
-    <div id="right-panel">
-      <viewer object="object"></viewer>
-    </div>
+  <body ng-controller="MainController">
+		<div id="left-panel">
+			<div id="upload-zone">
+				<div class="dz-preview dz-file-preview">
+					Drop your OBJ file here!
+					<div class="dz-progress"><span class="dz-upload" data-dz-uploadprogress></span></div>
+					<div class="dz-error-message"><span data-dz-errormessage></span></div>
+				</div>
+			</div>
+			
+			Maximal size ({{size}}):
+			<slider ng-model="size" min="1" step="1" max="maxSize"></slider>
+			<p>{{step}} / {{stepMax}}</p>
+		</div>
+		<div id="right-panel">
+		  <viewer object="object"></viewer>
+		</div>
   </body>
 </html>
