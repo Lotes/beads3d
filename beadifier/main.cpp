@@ -3,11 +3,13 @@
 #include <string>
 #include <boost/regex.hpp>
 #include <fstream>
+#include <algorithm>
 #include <vector>
 #include <list>
 #include <sstream>
 #include <math.h>
-#include "csg.h"
+#include <ctime>
+#include "csg.h" 
  
 using namespace std;
 
@@ -45,15 +47,19 @@ struct Range {
 	bool split(Range& left, Range& right) {
 		if(!isSplittable())
 			return false;
-		if(min.x != max.x) { //x varies
+		int diffX = max.x - min.x;
+		int diffY = max.y - min.y;
+		int diffZ = max.z - min.z;
+		int maximum = std::max(diffX, std::max(diffY, diffZ));
+		if(diffX == maximum) {
 		    int middle = (min.x + max.x) / 2;
 			left = Range(min, Vector3<int>(middle, max.y, max.z));
 			right = Range(Vector3<int>(middle+1, min.y, min.z), max);
-		} else if(min.y != max.y) { //y varies, x is fix
+		} else if(diffY == maximum) {
 			int middle = (min.y + max.y) / 2;
 			left = Range(min, Vector3<int>(max.x, middle, max.z));
 			right = Range(Vector3<int>(min.x, middle+1, min.z), max);
-		} else { //z varies, x and y are fix
+		} else {
 			int middle = (min.z + max.z) / 2;
 			left = Range(min, Vector3<int>(max.x, max.y, middle));
 			right = Range(Vector3<int>(min.x, min.y, middle+1), max);
@@ -64,6 +70,7 @@ struct Range {
 
 class Object {
 public:
+	Object(const Object& original): vertices(original.vertices), faces(original.faces) {}
 	Object(const char* fileName) {
 		ifstream infile(fileName);
 		string line;
@@ -117,6 +124,20 @@ public:
 			));
 		return BSPTree(triangles);
 	}
+	void translate(Vector3<float> translation) {
+		for(vector<Vector3<float>>::iterator it=vertices.begin(); it!=vertices.end(); it++) {
+			it->x += translation.x;
+			it->y += translation.y;
+			it->z += translation.z;
+		}
+	}
+	void scale(Vector3<float> scale) {
+		for(vector<Vector3<float>>::iterator it=vertices.begin(); it!=vertices.end(); it++) {
+			it->x *= scale.x;
+			it->y *= scale.y;
+			it->z *= scale.z;
+		}
+	}
 private:
 	float tofloat(const string& s) {
 		istringstream i(s);
@@ -150,131 +171,19 @@ private:
 	vector<Vector3<int>> faces;
 };
 
-/*BSPTree createCube(Vector3<float> min, Vector3<float> size) {
-	vector<Triangle> triangles;
-	
-	Vector3<float> halfSize = size.multiplyScalar(0.5f);
-	Vector3<float> normals[] = {
-		Vector3<float>(+1, 0, 0),
-		Vector3<float>(-1, 0, 0),
-		Vector3<float>(0, +1, 0),
-		Vector3<float>(0, -1, 0),
-		Vector3<float>(0, 0, +1),
-		Vector3<float>(0, 0, -1)
-	};
-	for(int index=0;)
-	
-	return BSPTree(triangles);
-}*/
 
+static Object cube("cube.obj");
 BSPTree createCube(Vector3<float> min, Vector3<float> size) {
-	/*float GAMMA = 0.00001f;
-	min = min.add(Vector3<float>(GAMMA, GAMMA, GAMMA));
-	size = size.subtract(Vector3<float>(2*GAMMA, 2*GAMMA, 2*GAMMA));*/
-	
-	vector<Vector3<float>> vertices;
-	vector<int> indices;
-	vector<Triangle> triangles;
-	Vector3<float> max = min.add(size);
-	//https://developer.mozilla.org/en-US/docs/Web/API/WebGL_API/Tutorial/Creating_3D_objects_using_WebGL
-	// Front face
-	vertices.push_back(Vector3<float>(min.x, min.y, max.z));//  -1.0, -1.0,  1.0,
-	vertices.push_back(Vector3<float>(max.x, min.y, max.z));//   1.0, -1.0,  1.0,
-	vertices.push_back(Vector3<float>(max.x, max.y, max.z));//   1.0,  1.0,  1.0,
-	vertices.push_back(Vector3<float>(min.x, max.y, max.z));//  -1.0,  1.0,  1.0,
-	  
-	// Back face
-	vertices.push_back(Vector3<float>(min.x, min.y, min.z));//  -1.0, -1.0, -1.0,
-	vertices.push_back(Vector3<float>(min.x, max.y, min.z));//  -1.0,  1.0, -1.0,
-	vertices.push_back(Vector3<float>(max.x, max.y, min.z));//   1.0,  1.0, -1.0,
-	vertices.push_back(Vector3<float>(max.x, min.y, min.z));//   1.0, -1.0, -1.0,
-	  
-	// Top face
-	vertices.push_back(Vector3<float>(min.x, max.y, min.z));//  -1.0,  1.0, -1.0,
-	vertices.push_back(Vector3<float>(min.x, max.y, max.z));//  -1.0,  1.0,  1.0,
-	vertices.push_back(Vector3<float>(max.x, max.y, max.z));//   1.0,  1.0,  1.0,
-	vertices.push_back(Vector3<float>(max.x, max.y, min.z));//   1.0,  1.0, -1.0,
-	  
-	// Bottom face
-	vertices.push_back(Vector3<float>(min.x, min.y, min.z));//  -1.0, -1.0, -1.0,
-	vertices.push_back(Vector3<float>(max.x, min.y, min.z));//   1.0, -1.0, -1.0,
-	vertices.push_back(Vector3<float>(max.x, min.y, max.z));//   1.0, -1.0,  1.0,
-	vertices.push_back(Vector3<float>(min.x, min.y, max.z));//  -1.0, -1.0,  1.0,
-	  
-	// Right face
-	vertices.push_back(Vector3<float>(max.x, min.y, min.z));//   1.0, -1.0, -1.0,
-	vertices.push_back(Vector3<float>(max.x, max.y, min.z));//   1.0,  1.0, -1.0,
-	vertices.push_back(Vector3<float>(max.x, max.y, max.z));//   1.0,  1.0,  1.0,
-	vertices.push_back(Vector3<float>(max.x, min.y, max.z));//   1.0, -1.0,  1.0,
-	  
-	// Left face
-	vertices.push_back(Vector3<float>(min.x, min.y, min.z));//  -1.0, -1.0, -1.0,
-	vertices.push_back(Vector3<float>(min.x, min.y, max.z));//  -1.0, -1.0,  1.0,
-	vertices.push_back(Vector3<float>(min.x, max.y, max.z));//  -1.0,  1.0,  1.0,
-	vertices.push_back(Vector3<float>(min.x, max.y, min.z));//  -1.0,  1.0, -1.0
-	
-	//front
-	indices.push_back(0);
-	indices.push_back(1);
-	indices.push_back(2);
-	indices.push_back(0);
-	indices.push_back(2);
-	indices.push_back(3);
-
-	//back
-	indices.push_back(4);
-	indices.push_back(5);
-	indices.push_back(6);
-	indices.push_back(4);
-	indices.push_back(6);
-	indices.push_back(7);
-	
-	//top
-	indices.push_back(8);
-	indices.push_back(9);
-	indices.push_back(10);
-	indices.push_back(8);
-	indices.push_back(10);
-	indices.push_back(11);
-	
-	//bottom
-	indices.push_back(12);
-	indices.push_back(13);
-	indices.push_back(14);
-	indices.push_back(12);
-	indices.push_back(14);
-	indices.push_back(15);
-	
-	//right
-	indices.push_back(16);
-	indices.push_back(17);
-	indices.push_back(18);
-	indices.push_back(16);
-	indices.push_back(18);
-	indices.push_back(19);
-	
-	//left
-	indices.push_back(20);
-	indices.push_back(21);
-	indices.push_back(22);
-	indices.push_back(20);
-	indices.push_back(22);
-	indices.push_back(23);
-	
-	//triangles
-	for(int index=0; index<indices.size(); index+=3)
-		triangles.push_back(Triangle(vertices[index], vertices[index+1], vertices[index+2]));
-
-	//BSPTree
-	return BSPTree(triangles);
+	Object obj = cube;
+	obj.scale(size);
+	obj.translate(min);
+	return obj.toTree();
 }
 
 void compute(int size, bool* voxels, BSPTree& model, Range& range) {
 	Range left;
 	Range right;
 	bool present;
-	
-	cout << model.toList().size() << endl;
 	
 	//test intersection
 	float scale = 1.0f/size;
@@ -304,21 +213,33 @@ void compute(int size, bool* voxels, BSPTree& model, Range& range) {
 	}
 }
 
-int main() {
+int main(int argc, char *argv[]) {
+	cube.translate(Vector3<float>(0.5f, 0.5f, 0.5f));
+	
+	if(argc != 3) {
+		cout << "Usage: beadify <file> <size>" << endl;
+		return 1;
+	}
+	
 	//config
-	int size = 10;
-	Object obj("../models/pikachu.obj");
+	int size = atoi(argv[2]);
+	char* fileName = argv[1];
 	
 	//preparation
+	Object obj(fileName);
 	bool* voxels = (bool*)malloc(size*size*size); 
 	memset(voxels, 0, size*size*size);
 	obj.normalize();
-	//BSPTree model = obj.toTree();
-	BSPTree model = createCube(Vector3<float>(0,0,0), Vector3<float>(0.5f, 0.5f, 0.5f));
+	BSPTree model = obj.toTree();
+	//BSPTree model = createCube(Vector3<float>(0,0,0), Vector3<float>(0.5f, 0.5f, 0.5f));
 	
 	//computation
 	Range range(Vector3<int>(0, 0, 0), Vector3<int>(size-1, size-1, size-1));
+	
+	clock_t begin = clock();
 	compute(size, voxels, model, range);
+	clock_t end = clock();
+	double elapsed_secs = double(end - begin) / CLOCKS_PER_SEC;
 	
 	//print
 	cout << "[" << endl;
@@ -341,6 +262,8 @@ int main() {
 		cout << endl;
 	}
 	cout << "]" << endl;
+	
+	cout << endl << elapsed_secs << " seconds" << endl;
 	
 	//clean up
 	free(voxels);

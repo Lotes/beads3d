@@ -1,4 +1,43 @@
 angular.module('beads3d', ['ui.bootstrap-slider'])
+  .controller('BeadifyController', function($scope, $http) {
+    $scope.model = new THREE.Object3D();
+	var files = ['A', 'B', '1.a', '2.a', '3.b', '4.b', '5.b', '6.b', '7.a', '8.a', 'result'];
+    var index = 0;
+	function checkKey(e) {
+		e = e || window.event;
+		if (e.keyCode == '37') {
+		   index = (index - 1) % files.length;
+		   load();
+		}
+		else if (e.keyCode == '39') {
+		   index = (index + 1) % files.length;
+		   load();
+		}
+	}
+	function load() {
+		$http({
+		  method: 'GET',
+		  url: '/beadifier/'+files[index]+'.json'
+		}).then(function(response) {
+			var triangles = response.data;
+			var geometry = new THREE.Geometry();
+			for(var index=0; index<triangles.length; index++) {
+				var triangle = triangles[index];
+				for(var vIndex=0; vIndex<3; vIndex++) {			
+					var vertex = triangle[vIndex];
+					geometry.vertices.push(new THREE.Vector3(vertex[0], vertex[1], vertex[2]));	
+				}
+				geometry.faces.push(new THREE.Face3(index*3, index*3+1, index*3+2));	
+			}
+			var material = new THREE.MeshBasicMaterial({ color: 0xFF0000 });
+			$scope.model = new THREE.Object3D();
+			$scope.model.add(new THREE.Mesh(geometry, material));
+		});	
+		console.log('loading '+files[index]);
+	}
+	load();
+	document.onkeydown = checkKey;	
+  })
   .controller('MainController', function($scope, $q, $interval) {
     var material = new THREE.MeshBasicMaterial({color: 0x000000 });
   
@@ -213,9 +252,9 @@ angular.module('beads3d', ['ui.bootstrap-slider'])
         $scope.$apply();
       }, function(xhr) {
         if ( xhr.lengthComputable ) {
-					var percentComplete = xhr.loaded / xhr.total * 100;
-					deferred.notify(percentComplete);
-				}
+          var percentComplete = xhr.loaded / xhr.total * 100;
+          deferred.notify(percentComplete);
+        }
       }, function(xhr) {
         deferred.reject(new Error(xhr.responseText));
       });
@@ -245,29 +284,29 @@ angular.module('beads3d', ['ui.bootstrap-slider'])
           renderer.setSize(div.clientWidth, div.clientHeight);
         }
       
-				camera = new THREE.PerspectiveCamera( 45, window.innerWidth / window.innerHeight, 1, 2000 );
+        camera = new THREE.PerspectiveCamera( 45, window.innerWidth / window.innerHeight, 1, 2000 );
         camera.position.set(2, 2, 2)
         camera.lookAt(new THREE.Vector3())
     
-				// scene
-				scene = new THREE.Scene();
-				var ambient = new THREE.AmbientLight(0xFFFFFF);
-				scene.add(ambient);
+        // scene
+        scene = new THREE.Scene();
+        var ambient = new THREE.AmbientLight(0xFFFFFF);
+        scene.add(ambient);
         
-				//renderer
-				renderer = new THREE.WebGLRenderer();
-				renderer.setPixelRatio(div.devicePixelRatio);
+        //renderer
+        renderer = new THREE.WebGLRenderer();
+        renderer.setPixelRatio(div.devicePixelRatio);
         renderer.setClearColor(0x8080ff, 1);
-				onWindowResize();
-				div.appendChild(renderer.domElement);
+        onWindowResize();
+        div.appendChild(renderer.domElement);
 
-				//controls
+        //controls
         controls = new THREE.OrbitControls( camera, renderer.domElement );
-				controls.enableDamping = false;
-				controls.enableZoom = true;
+        controls.enableDamping = false;
+        controls.enableZoom = true;
 
-				//window events
-				window.addEventListener('resize', onWindowResize, false);
+        //window events
+        window.addEventListener('resize', onWindowResize, false);
         
         //start animation loop
         animate();

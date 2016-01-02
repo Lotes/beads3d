@@ -4,6 +4,9 @@
 #include <vector>
 #include <math.h>
 #include <utility>
+#include <sstream>
+#include <fstream>
+#include <string>
 
 using namespace std;
 
@@ -57,6 +60,11 @@ public:
 	Vector3<T> lerp(const Vector3<T> a, const T scalar) const {
 		return add(a.subtract(*this).multiplyScalar(scalar));
 	}
+	string toString() {
+		std::stringstream stream;
+		stream << "[" << x << ", " << y << ", " << z << "]";
+		return stream.str();
+	}
 };
 
 enum {
@@ -66,7 +74,7 @@ enum {
 	SPANNING = 3
 };
 
-const float EPSILON = 0.00001f;
+const float EPSILON = 0.000001f;
 
 class Triangle {
 public:
@@ -89,6 +97,12 @@ public:
 		swap(_vertices[0], _vertices[2]);
 		_normal = _normal.multiplyScalar(-1);
 		_w *= -1;
+	}
+	
+	string toString() {
+		std::stringstream stream;
+		stream << "[" << _vertices[0].toString() << ", " << _vertices[1].toString() << ", " << _vertices[2].toString() << "]";
+		return stream.str();
 	}
 	
 	void split(const Triangle& polygon, vector<Triangle>& coFront, vector<Triangle>& coBack, vector<Triangle>& front, vector<Triangle>& back) const {
@@ -138,7 +152,7 @@ public:
 private:
 	void addPolygon(vector<Vector3<float>>& points, vector<Triangle>& triangles) const {
 		for(int index=2; index<points.size(); index++)
-			triangles.push_back(Triangle(points[index-2], points[index-1], points[index]));
+			triangles.push_back(Triangle(points[0], points[index-1], points[index]));
 	}
 	int classify(Vector3<float> point) const {
 		float loc = _normal.dot(point) - _w;
@@ -198,17 +212,17 @@ public:
 		_content = other.clip(_content);
 		if(_front) { 
 			_front->clipTo(other);
-			if(_front->empty()) {
+			/*if(_front->empty()) {
 				delete _front;
 				_front = 0;
-			}
+			}*/
 		}
 		if(_back) {
 			_back->clipTo(other);
-			if(_back->empty()) {
+			/*if(_back->empty()) {
 				delete _back;
 				_back = 0;
-			}
+			}*/
 		}
 	}
 	void invert() {
@@ -236,13 +250,21 @@ public:
 		BSPTree a = A;
 		BSPTree b = B;
 		a.invert();
+		a.save("1.a.json");
 		a.clipTo(b);
+		a.save("2.a.json");
 		b.clipTo(a);
+		b.save("3.b.json");
 		b.invert();
+		b.save("4.b.json");
 		b.clipTo(a);
+		b.save("5.b.json");
 		b.invert();
+		b.save("6.b.json");
 		a.build(b.toList());
+		a.save("7.a.json");
 		a.invert();
+		a.save("8.a.json");
 		return BSPTree(a.toList());
 	}
 
@@ -257,6 +279,25 @@ public:
 		a.build(b.toList());
 		a.invert();
 		return BSPTree(a.toList());
+	}
+	
+	string toString() {
+		vector<Triangle> list = toList();
+		std::stringstream stream;
+		stream << "[";
+		for(int index=0; index<list.size(); index++) {
+			if(index > 0)
+				stream << ", ";
+			stream << list[index].toString();
+		}
+		stream << "]";
+		return stream.str();
+	}
+	
+	void save(const char* fileName) {
+		string input = toString();
+		std::ofstream out(fileName);
+		out << input;
 	}
 private:
 	vector<Triangle> clip(const vector<Triangle>& triangles) const {
@@ -281,8 +322,18 @@ private:
 		vector<Triangle> front, back;
 		for(int index=first; index<triangles.size(); index++)
 			_node.split(triangles[index], _content, _content, front, back);
-		if(front.size()) _front = new BSPTree(front);
-		if(back.size()) _back = new BSPTree(back);
+		if(front.size()) {
+			if(!_front)
+				_front = new BSPTree(front);
+			else
+				_front->build(front);
+		}
+		if(back.size()) {
+			if(!_back) 
+				_back = new BSPTree(back);
+			else
+				_back->build(back);
+		}
 	}
 	Triangle _node;
 	vector<Triangle> _content;

@@ -23,10 +23,11 @@
     <script src="app/app.js"></script>
   </head>
   <body ng-controller="MainController" ng-init="load('models/pikachu.obj')">
-    <div id="left-panel">
-      Maximal size ({{size}}):
+    <div id="left-panel" ng-controller="BeadifyController">
+      <viewer object="model"></viewer>
+	  <!--Maximal size ({{size}}):
       <slider ng-model="size" min="1" step="1" max="maxSize"></slider>
-      <p>{{step}} / {{stepMax}}</p>
+      <p>{{step}} / {{stepMax}}</p>-->
     </div>
     <div id="right-panel">
       <viewer object="voxelHeap"></viewer>
