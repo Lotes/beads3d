@@ -2,3 +2,11 @@
 /node_modules
 /beadifier/beadify.exe
 /beadifier/*.json
+/beadifier/cygboost_regex-1_58.dll
+/beadifier/cyggcc_s-seh-1.dll
+/beadifier/cygicudata56.dll
+/beadifier/cygicui18n56.dll
+/beadifier/cygicuuc56.dll
+/beadifier/cygstdc++-6.dll
+/beadifier/cygwin1.dll
+/public/bower_components

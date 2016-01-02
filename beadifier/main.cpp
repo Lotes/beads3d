@@ -79,6 +79,8 @@ public:
 	Object(const Object& original): vertices(original.vertices), faces(original.faces) {}
 	Object(const char* fileName) {
 		ifstream infile(fileName);
+		if(!infile)
+			throw "File does not exist!";
 		string line;
 		while (getline(infile, line)) {
 			boost::regex vertexPattern(".*v +([\\d|\\.|\\+|\\-|e|E]+) +([\\d|\\.|\\+|\\-|e|E]+) +([\\d|\\.|\\+|\\-|e|E]+).*");

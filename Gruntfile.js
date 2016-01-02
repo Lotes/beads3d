@@ -1,5 +1,7 @@
 'use strict';
 
+var path = require('path');
+
 module.exports = function(grunt) {
   grunt.initConfig({
     php: {
@@ -11,7 +13,14 @@ module.exports = function(grunt) {
                 open: false
             }
         }
-    }
+    },
+	express: {
+		server: {
+			options: {
+				script: 'server.js'
+			}
+		}
+	}
     /*watch: {
       all: {
         files: ['<%= jshint.all %>'],
@@ -22,6 +31,7 @@ module.exports = function(grunt) {
 
   grunt.loadNpmTasks('grunt-contrib-watch');
   grunt.loadNpmTasks('grunt-php');
+  grunt.loadNpmTasks('grunt-express');
   
-  grunt.registerTask('default', ['php:server']);
+  grunt.registerTask('default', ['express']);
 };
