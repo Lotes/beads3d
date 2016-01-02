@@ -250,21 +250,13 @@ public:
 		BSPTree a = A;
 		BSPTree b = B;
 		a.invert();
-		a.save("1.a.json");
 		a.clipTo(b);
-		a.save("2.a.json");
 		b.clipTo(a);
-		b.save("3.b.json");
 		b.invert();
-		b.save("4.b.json");
 		b.clipTo(a);
-		b.save("5.b.json");
 		b.invert();
-		b.save("6.b.json");
 		a.build(b.toList());
-		a.save("7.a.json");
 		a.invert();
-		a.save("8.a.json");
 		return BSPTree(a.toList());
 	}
 

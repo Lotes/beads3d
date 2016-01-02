@@ -66,6 +66,12 @@ struct Range {
 		}
 		return true;
 	}
+	int volume() {
+		int dx = max.x - min.x + 1;
+		int dy = max.y - min.y + 1;
+		int dz = max.z - min.z + 1;
+		return dx * dy * dz;
+	}
 };
 
 class Object {
@@ -171,6 +177,18 @@ private:
 	vector<Vector3<int>> faces;
 };
 
+class Progress {
+public:
+	Progress(int maximum, bool verbose): verbose(verbose), maximum(maximum), current(0) {}
+	void step(int amount = 1) {
+		current += amount;
+		if(verbose)
+			cout << current << "/" << maximum << endl;
+	}
+private:
+	int maximum, current;
+	bool verbose;
+};
 
 static Object cube("cube.obj");
 BSPTree createCube(Vector3<float> min, Vector3<float> size) {
@@ -180,7 +198,7 @@ BSPTree createCube(Vector3<float> min, Vector3<float> size) {
 	return obj.toTree();
 }
 
-void compute(int size, bool* voxels, BSPTree& model, Range& range) {
+void compute(int size, bool* voxels, BSPTree& model, Range& range, Progress& progress) {
 	Range left;
 	Range right;
 	bool present;
@@ -197,73 +215,81 @@ void compute(int size, bool* voxels, BSPTree& model, Range& range) {
 	BSPTree intersection = BSPTree::Intersect(model, cube);
 	present = !intersection.empty();
 	
-	if(!present)
-		return;
+	if(!present) {
+		progress.step(range.volume());
+		return;	
+	}
 	
 	//recursion
 	if(range.split(left, right)) {
-		compute(size, voxels, intersection, left);
-		compute(size, voxels, intersection, right);
+		compute(size, voxels, intersection, left,  progress);
+		compute(size, voxels, intersection, right, progress);
 	} else {
 		int x = range.min.x;
 		int y = range.min.y;
 		int z = range.min.z;
 		int index = x + size * (y + size * z);
 		voxels[index] = present;
+		progress.step();
 	}
+}
+
+void printResult(int size, bool* voxels, ostream& stream) {
+	stream << "[" << endl;
+	for(int z=0; z<size; z++) {
+		stream << "\t[" << endl;
+		for(int y=0; y<size; y++) {
+			stream << "\t\t\"";
+			for(int x=0; x<size; x++) {
+				int index = x + size * (y + size * z);
+				stream << (voxels[index] ? "X" : " ");
+			}
+			stream << "\"";
+			if(y<size-1)
+				stream << ",";
+			stream << endl;
+		}
+		stream << "\t]";
+		if(z<size-1)
+			stream << ",";
+		stream << endl;
+	}
+	stream << "]" << endl;
 }
 
 int main(int argc, char *argv[]) {
 	cube.translate(Vector3<float>(0.5f, 0.5f, 0.5f));
 	
-	if(argc != 3) {
-		cout << "Usage: beadify <file> <size>" << endl;
+	if(argc < 3) {
+		cout << "Usage: beadify <obj file> <size> [<output file>]" << endl;
 		return 1;
 	}
 	
 	//config
 	int size = atoi(argv[2]);
+	int volume = size*size*size;
 	char* fileName = argv[1];
+	char* outputFileName = argc == 3 ? 0 : argv[3];
+	Progress progress(volume, outputFileName!=0);
 	
 	//preparation
 	Object obj(fileName);
-	bool* voxels = (bool*)malloc(size*size*size); 
-	memset(voxels, 0, size*size*size);
+	bool* voxels = (bool*)malloc(volume); 
+	memset(voxels, 0, volume);
 	obj.normalize();
 	BSPTree model = obj.toTree();
-	//BSPTree model = createCube(Vector3<float>(0,0,0), Vector3<float>(0.5f, 0.5f, 0.5f));
 	
 	//computation
 	Range range(Vector3<int>(0, 0, 0), Vector3<int>(size-1, size-1, size-1));
-	
-	clock_t begin = clock();
-	compute(size, voxels, model, range);
-	clock_t end = clock();
-	double elapsed_secs = double(end - begin) / CLOCKS_PER_SEC;
+	compute(size, voxels, model, range, progress);
 	
 	//print
-	cout << "[" << endl;
-	for(int z=0; z<size; z++) {
-		cout << "\t[" << endl;
-		for(int y=0; y<size; y++) {
-			cout << "\t\t\"";
-			for(int x=0; x<size; x++) {
-				int index = x + size * (y + size * z);
-				cout << (voxels[index] ? "X" : " ");
-			}
-			cout << "\"";
-			if(y<size-1)
-				cout << ",";
-			cout << endl;
-		}
-		cout << "\t]";
-		if(z<size-1)
-			cout << ",";
-		cout << endl;
+	if(outputFileName) {
+		ofstream out(outputFileName);
+		printResult(size, voxels, out);
 	}
-	cout << "]" << endl;
-	
-	cout << endl << elapsed_secs << " seconds" << endl;
+	else
+		printResult(size, voxels, cout);
 	
 	//clean up
 	free(voxels);
