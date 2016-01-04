@@ -238,21 +238,21 @@ void compute(int size, bool* voxels, BSPTree& model, Range& range, Progress& pro
 
 void printResult(int size, bool* voxels, ostream& stream) {
 	stream << "[" << endl;
-	for(int z=0; z<size; z++) {
+	for(int y=0; y<size; y++) {
 		stream << "\t[" << endl;
-		for(int y=0; y<size; y++) {
+		for(int z=0; z<size; z++) {
 			stream << "\t\t\"";
 			for(int x=0; x<size; x++) {
 				int index = x + size * (y + size * z);
 				stream << (voxels[index] ? "X" : " ");
 			}
 			stream << "\"";
-			if(y<size-1)
+			if(z<size-1)
 				stream << ",";
 			stream << endl;
 		}
 		stream << "\t]";
-		if(z<size-1)
+		if(y<size-1)
 			stream << ",";
 		stream << endl;
 	}

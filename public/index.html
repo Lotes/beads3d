@@ -10,6 +10,7 @@
     <script src="bower_components/bootstrap/dist/js/bootstrap.min.js"></script>
     <script src="bower_components/three.js/three.min.js"></script>
     <script src="bower_components/angular/angular.min.js"></script>
+    <script src="bower_components/angular-route/angular-route.min.js"></script>
     
     <script src="app/OBJLoader.js"></script>
     <script src="app/OrbitControls.js"></script>
@@ -23,7 +24,9 @@
     <link href="app/style.css" rel="stylesheet"/>
     <script src="app/app.js"></script>
   </head>
-  <body ng-controller="MainController">
+  <body ng-view>
+  </body>
+  <!--body ng-controller="MainController">
 		<div id="left-panel">
 			<div id="upload-zone">
 				<div class="dz-preview dz-file-preview">
@@ -35,10 +38,16 @@
 			
 			Maximal size ({{size}}):
 			<slider ng-model="size" min="1" step="1" max="maxSize"></slider>
-			<p>{{step}} / {{stepMax}}</p>
+			
+			<div class="progress">
+			  <div class="progress-bar progress-bar-info" role="progressbar" aria-valuenow="50"
+			  aria-valuemin="0" aria-valuemax="100" ng-style="{ width: progress+'%' }">
+				{{progress | number : 0}} %
+			  </div>
+			</div>
 		</div>
 		<div id="right-panel">
 		  <viewer object="object"></viewer>
 		</div>
-  </body>
+  </body-->
 </html>
