@@ -4,11 +4,9 @@ var server = require('http').createServer(app);
 var io = require('socket.io').listen(server);
 var process = require('child_process');
 var fs = require('fs');
-var bodyParser = require('body-parser');
 
 server.listen(8080);
 
-app.use(bodyParser());
 app.use(express.static(__dirname + '/public'));
 
 app.get('/', function (req, res) {

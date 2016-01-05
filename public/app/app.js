@@ -9,7 +9,7 @@ Dropzone.options.myAwesomeDropzone = {
   }
 };
 
-angular.module('beads3d', ['ui.bootstrap-slider', 'ngRoute'])
+angular.module('beads3d', ['ui.bootstrap-slider', 'ngRoute', 'infinite-scroll'])
   .config(function($routeProvider, $locationProvider) {
     $routeProvider
       .when('/', {
@@ -33,10 +33,32 @@ angular.module('beads3d', ['ui.bootstrap-slider', 'ngRoute'])
   })
   .controller('SearchController', function($scope, $routeParams, $location) {
     $scope.pattern = decodeURIComponent($routeParams.pattern);
+    $scope.results = [];
+    for(var index=0; index<10; index++)
+        $scope.results.push($scope.pattern+$scope.results.length);
     $scope.search = function() {
       $location.path('/search/'+encodeURIComponent($scope.pattern));
     };
+    $scope.searchMore = function() {
+      console.log('more!!!');
+      for(var index=0; index<10; index++)
+        $scope.results.push($scope.pattern+$scope.results.length);
+    };
   })
+  /*.directive('whenScrolled', function ($document) {
+      return {
+          restrict: 'A',
+          link: function (scope, element, attrs) {
+              var raw = element[0];
+              $document.bind('scroll', function () {
+                  console.log(raw.scrollTop+'+'+raw.offsetHeight+'>'+raw.scrollHeight);
+                  if (raw.scrollTop + raw.offsetHeight >= raw.scrollHeight) {
+                      scope.$apply(attrs.whenScrolled);
+                  }
+              });
+          }
+      };
+  })*/
 /*  .controller('MainController', function($scope, $q, $interval) {
     var uploadZone = new Dropzone('div#upload-zone', { url: '/upload' });
       uploadZone.on('complete', function(data) {
