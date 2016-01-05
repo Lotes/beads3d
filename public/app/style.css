@@ -18,3 +18,20 @@ html, body {
 	height: 100px;
 	text-align: center;
 }
+
+.dz-image,
+.dz-details,
+.dz-error-mark ,
+.dz-success-mark {
+  display: none;
+}
+
+.dz-progress {
+  height: 10px;
+  border: 1px solid black;
+  margin: 10px;
+}
+
+.dz-upload {
+  background-color: #4040FF;
+}

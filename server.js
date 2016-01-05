@@ -4,6 +4,8 @@ var server = require('http').createServer(app);
 var io = require('socket.io').listen(server);
 var process = require('child_process');
 var fs = require('fs');
+var multer = require('multer');
+var upload = multer();
 
 server.listen(8080);
 
@@ -34,17 +36,24 @@ function newDirectory(cb) {
     });
 }
 
-app.post('/upload', function(req, res) {
-	newDirectory(function(err, path, name) {
+app.post('/uploads', upload.single('file'), function(req, res) {
+	//TODO test file size over whole session
+  newDirectory(function(err, path, name) {
 		if(err)
 			return res.status(500).send('Could not create new directory!');
-		var newPath = path+'/model.obj'
-		fs.readFile(req.files[0].path, function(err, data) {
-			fs.writeFile(newPath, data, function (err) {
-				res.send(name);
-			});
-		});
+		var newPath = path+'/model.obj';
+    fs.writeFile(newPath, req.file.buffer, function (err) {
+      res.send(name);
+    });
 	});
+});
+
+app.get('/uploads', function(req, res) {
+  res.status(500).send('Not implemented yet.');
+});
+
+app.get('/uploads/:id', function(req, res) {
+  res.status(500).send('Not implemented yet.');
 });
 
 io.sockets.on('connection', function (socket) {

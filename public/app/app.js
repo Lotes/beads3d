@@ -20,8 +20,23 @@ angular.module('beads3d', ['ui.bootstrap-slider', 'ngRoute', 'infinite-scroll'])
         templateUrl: 'views/search.html',
         controller: 'SearchController'
       })
+      .when('/new', {
+        templateUrl: 'views/new.html'
+      })
+      .when('/edit', {
+        templateUrl: 'views/edit.html'
+      })
+      .when('/import', {
+        templateUrl: 'views/import.html',
+        controller: function($scope) {
+          var uploadZone = new Dropzone('div#upload-zone', { url: '/uploads' });
+          uploadZone.on('complete', function(data) {
+            console.log(data);
+          });
+        }
+      })
       .otherwise({
-        redirect: '/'
+        redirectTo: '/'
       })
       ;
   })
@@ -40,7 +55,6 @@ angular.module('beads3d', ['ui.bootstrap-slider', 'ngRoute', 'infinite-scroll'])
       $location.path('/search/'+encodeURIComponent($scope.pattern));
     };
     $scope.searchMore = function() {
-      console.log('more!!!');
       for(var index=0; index<10; index++)
         $scope.results.push($scope.pattern+$scope.results.length);
     };
