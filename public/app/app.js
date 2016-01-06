@@ -16,6 +16,10 @@ angular.module('beads3d', ['ui.bootstrap-slider', 'ngRoute', 'infinite-scroll'])
         templateUrl: 'views/frontpage.html',
         controller: 'FrontPageController'
       })
+      .when('/search', {
+        templateUrl: 'views/search.html',
+        controller: 'SearchController'
+      })
       .when('/search/:pattern*', {
         templateUrl: 'views/search.html',
         controller: 'SearchController'
@@ -25,6 +29,9 @@ angular.module('beads3d', ['ui.bootstrap-slider', 'ngRoute', 'infinite-scroll'])
       })
       .when('/edit', {
         templateUrl: 'views/edit.html'
+      })
+      .when('/impress', {
+        templateUrl: 'views/impress.html'
       })
       .when('/import', {
         templateUrl: 'views/import.html',
@@ -47,8 +54,9 @@ angular.module('beads3d', ['ui.bootstrap-slider', 'ngRoute', 'infinite-scroll'])
     };
   })
   .controller('SearchController', function($scope, $routeParams, $location) {
-    $scope.pattern = decodeURIComponent($routeParams.pattern);
+    $scope.pattern = $routeParams.pattern ? decodeURIComponent($routeParams.pattern) : '';
     $scope.results = [];
+    //TODO
     for(var index=0; index<10; index++)
         $scope.results.push($scope.pattern+$scope.results.length);
     $scope.search = function() {

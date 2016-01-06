@@ -6,9 +6,13 @@ var process = require('child_process');
 var fs = require('fs');
 var multer = require('multer');
 var upload = multer();
+var cookieParser = require('cookie-parser')
+var session = require('./middleware/session');
 
 server.listen(8080);
 
+app.use(cookieParser());
+app.use(session);
 app.use(express.static(__dirname + '/public'));
 
 app.get('/', function (req, res) {
