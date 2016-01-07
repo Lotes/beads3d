@@ -9,19 +9,20 @@ var MAX_AGE_IN_DAYS = 366;
 module.exports = {
   MAX_AGE_IN_DAYS: MAX_AGE_IN_DAYS,
   /**
-   * Creates a new session and returns the session id.
+   * Creates a new session and returns the session object.
    */
   create: function createNew() {
     var deferred = Q.defer();
     var sessionId = randomString(SESSION_ID_LENGTH);
-    new Session({
+    var session = new Session({
       cookie: sessionId
-    }).save(function(err) {
+    });
+    session.save(function(err) {
       if(err) 
         createNew().then(function(id) { deferred.resolve(id); }, 
           function(reason) { deferred.reject(reason); });
       else
-        deferred.resolve(sessionId);
+        deferred.resolve(session);
     });
     return deferred.promise;
   },

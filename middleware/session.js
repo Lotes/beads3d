@@ -8,18 +8,20 @@ function session(req, res, next) {
   if (cookie === undefined) {
     Session
       .create()
-      .then(function(sessionId) {
-        console.log('created new session: '+sessionId);
-        req.sessionId = sessionId;
-        res.cookie(SESSION_ID, sessionId, { maxAge: SESSION_AGE, httpOnly: true });
+      .then(function(session) {
+        console.log('Created new session: '+session.cookie);
+        req.sessionId = session.cookie;
+        req.session = session;
+        res.cookie(SESSION_ID, session.cookie, { maxAge: SESSION_AGE, httpOnly: true });
         next();
       }, next);
   } else {
     Session
       .get(cookie)
-      .then(function(value) {
-        if(value !== null) {
+      .then(function(session) {
+        if(session !== null) {
           req.sessionId = cookie;
+          req.session = session;
           Session.access(cookie).then(next, next);
         } else {
           console.log('Session is not ok! -> clear & refresh');
