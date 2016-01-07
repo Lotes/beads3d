@@ -9,8 +9,11 @@ Dropzone.options.myAwesomeDropzone = {
   }
 };
 
+var socket;
+
 angular.module('beads3d', ['ui.bootstrap-slider', 'ngRoute', 'infinite-scroll'])
   .config(function($routeProvider, $locationProvider) {
+    socket = io.connect();
     $routeProvider
       .when('/', {
         templateUrl: 'views/frontpage.html',
@@ -38,6 +41,21 @@ angular.module('beads3d', ['ui.bootstrap-slider', 'ngRoute', 'infinite-scroll'])
         controller: function($scope) {
           var uploadZone = new Dropzone('div#upload-zone', { url: '/uploads' });
           uploadZone.on('complete', function(data) {
+            console.log(data);
+          });
+          
+          console.log('Beadify!');
+          socket.emit('initialize', {
+            name: 'pikachu',
+            size: 10
+          });
+          socket.on('progress', function(progress) {
+            console.log(progress);
+          });
+          socket.on('fail', function(error) {
+            console.log(error);
+          });
+          socket.on('result', function(data) {
             console.log(data);
           });
         }

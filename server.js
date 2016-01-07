@@ -2,14 +2,20 @@ var express = require('express');
 var app = express();
 var server = require('http').createServer(app);
 var io = require('socket.io').listen(server);
-var process = require('child_process');
 var fs = require('fs');
 var multer = require('multer');
 var upload = multer();
-var cookieParser = require('cookie-parser')
+var cookieParser = require('cookie-parser');
+var ioCookieParser = require('socket.io-cookie-parser');
 var session = require('./middleware/session');
+var Model = require('./resources/Model');
 
 server.listen(8080);
+
+io.use(ioCookieParser());
+io.use(function(socket, next) {
+  session(socket.request, {}, next);
+});
 
 app.use(cookieParser());
 app.use(session);
@@ -19,76 +25,58 @@ app.get('/', function (req, res) {
 	res.sendfile(__dirname + '/public/index.html');
 });
 
-function generateRandomString(length) {
-	var characters = 'abcdefghijklmnopqrstuvwxyz_0123456789';
-	var result = '';
-	while(length > 0) {
-		result += characters[Math.floor(Math.random() * characters.length)];
-		length--;
-	}
-	return result;
-}
-
-function newDirectory(cb) {
-	var name = generateRandomString(20);
-	var path = __dirname + '/models/'+name;
-	fs.mkdir(path, function(err) {
-        if (err)
-            newDirectory(callback);
-        else 
-			cb(null, path, name);
-    });
-}
-
 app.post('/uploads', upload.single('file'), function(req, res) {
-	//TODO test file size over whole session
-  newDirectory(function(err, path, name) {
-		if(err)
-			return res.status(500).send('Could not create new directory!');
-		var newPath = path+'/model.obj';
-    fs.writeFile(newPath, req.file.buffer, function (err) {
-      res.send(name);
+	Model.create(req.file.buffer, req.session)
+    .then(function(model) {
+      console.log('Creating model... '+model.name);
+      res.send(model.name);
+    }, function(err) {
+      console.log('Creating model... FAIL: '+err.message);
+      res.status(500).send(err.message);
     });
-	});
 });
 
 app.get('/uploads', function(req, res) {
-  res.status(500).send('Not implemented yet.');
+  Model.query({
+    session: req.session
+  }).then(function(models) {
+    console.log('Enumerating models for session "'+req.session.cookie+'"... OK: '+models.length);
+    var result = [];
+    models.forEach(function(model) {
+      result.push({
+        name: model.name,
+        size: model.size
+      });
+    });
+    res.json(result);
+  }, function(err) {
+    console.log('Enumerating models for session "'+req.session.cookie+'"... FAIL: '+err.message);
+    res.status(500).send(err.message);
+  });
 });
 
-app.get('/uploads/:id', function(req, res) {
-  res.status(500).send('Not implemented yet.');
+app.get('/uploads/:name', function(req, res) {
+  Model.data(req.session, req.params.name)
+    .then(function(data) {
+      console.log('Reading model "'+req.params.name+'"... OK');
+      res.header("Content-Type", "text/plain");
+      res.send(data);
+    }, function(err) {
+      console.log('Reading model "'+req.params.name+'"... FAIL: '+err.message);
+      res.status(500).send(err.message);
+    });
 });
 
 io.sockets.on('connection', function (socket) {
-	var beadify = null;
 	socket.on('initialize', function (data) {
-		var cmd = __dirname + '/beadifier/beadify "../'+data.fileName+'" '+data.size+' result.json';
-		if(beadify) 
-			beadify.kill();
-		beadify = process.exec(cmd, {cwd: 'beadifier'});
-		var text = '';
-		var pattern = /(\d+)\/(\d+)/;
-		function parseText() {
-			var match = pattern.exec(text);
-			if(match != null) {
-				socket.emit('progress', {
-					current: parseInt(match[1], 10),
-					maximum: parseInt(match[2], 10)
-				});
-				text = '';
-			}
-		}
-		beadify.stdout.on('data', function(data) {
-			var lines = data.split('\n');
-			lines.forEach(function(line) {
-				text += line;
-				parseText();
-			});
-		});
-		beadify.on('exit', function(code) {
-			socket.emit('result', JSON.parse(fs.readFileSync('beadifier/result.json')));
-		});
+    Model.beadify(socket.request.session, data.name, data.size)
+      .then(function(data) {
+        socket.emit('result', JSON.stringify(data));
+      }, function(err) {
+        socket.emit('fail', err.message);
+      }, function(progress) {
+        socket.emit('progress', JSON.stringify(progress));
+      });
 	});
 });
 
