@@ -71,11 +71,11 @@ io.sockets.on('connection', function (socket) {
 	socket.on('initialize', function (data) {
     Model.beadify(socket.request.session, data.name, data.size)
       .then(function(data) {
-        socket.emit('result', JSON.stringify(data));
+        socket.emit('result', data);
       }, function(err) {
         socket.emit('fail', err.message);
       }, function(progress) {
-        socket.emit('progress', JSON.stringify(progress));
+        socket.emit('progress', progress);
       });
 	});
 });

@@ -99,59 +99,6 @@ angular.module('beads3d', ['ui.bootstrap-slider', 'ngRoute', 'infinite-scroll'])
           }
       };
   })*/
-/*  .controller('MainController', function($scope, $q, $interval) {
-    var uploadZone = new Dropzone('div#upload-zone', { url: '/upload' });
-      uploadZone.on('complete', function(data) {
-      console.log(data);
-    });
-	
-	var material = new THREE.MeshBasicMaterial({color: 0x000000 });
-	var socket = io.connect();
-  
-	$scope.url = 'models/pikachu.obj';
-	$scope.size = 10;
-	$scope.maxSize = 40;
-  
-	$scope.progress = 0;
-	$scope.step = 0;
-	$scope.stepMax = 100;
-    $scope.object = new THREE.Object3D();
-	
-    $scope.load = function() {
-	  var url = $scope.url;
-      var size = $scope.size;
-	  $scope.progress = 0;
-	  $scope.step = 0;
-	  $scope.object = new THREE.Object3D();
-	  socket.emit('initialize', {
-		  fileName: url,
-		  size: size
-	  });
-	  socket.on('progress', function(data) {
-		$scope.progress = data.current / data.maximum * 100;
-		$scope.step = data.current;
-		$scope.stepMax = data.maximum;
-		$scope.$apply();
-	  });
-	  socket.on('result', function(data) {
-		$scope.object = new THREE.Object3D();
-		var material = new THREE.MeshLambertMaterial({ color: 0xFFFFFF });	
-		var cube = new THREE.BoxGeometry(1, 1, 1);
-		for(var y=0; y<size; y++)
-			for(var z=0; z<size; z++)
-				for(var x=0; x<size; x++)
-					if(data[y][z].charAt(x) !== ' ') {
-						var mesh = new THREE.Mesh(cube, material);
-						mesh.position.set(x, y, z);
-						$scope.object.add(mesh);
-					}
-		$scope.object.scale.set(1/size, 1/size, 1/size);
-		$scope.$apply();
-	  });
-    };
-	
-	$scope.$watch('size', $scope.load);
-  })*/
   .directive('viewer', function() {
     return {
       restrict: 'E',
