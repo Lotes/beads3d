@@ -38,32 +38,50 @@ angular.module('beads3d', ['ui.bootstrap-slider', 'ngRoute', 'infinite-scroll'])
       })
       .when('/import', {
         templateUrl: 'views/import.html',
-        controller: function($scope) {
+        controller: function($scope, Model) {
           var uploadZone = new Dropzone('div#upload-zone', { url: '/uploads' });
           uploadZone.on('complete', function(data) {
             console.log(data);
           });
           
-          console.log('Beadify!');
-          socket.emit('initialize', {
-            name: 'pikachu',
-            size: 10
-          });
-          socket.on('progress', function(progress) {
-            console.log(progress);
-          });
-          socket.on('fail', function(error) {
-            console.log(error);
-          });
-          socket.on('result', function(data) {
-            console.log(data);
-          });
+          $scope.models = [];
+          $scope.refresh = function() {
+            Model.all().then(function(res) {
+              $scope.models = res.data;
+            }, function(err) {
+              console.log(err);
+            });
+          };
+          $scope.removeModel = function(name) {
+            Model.remove(name).then(function() {
+              $scope.refresh();
+            });
+          };
+          
+          $scope.refresh();
         }
       })
       .otherwise({
         redirectTo: '/'
       })
       ;
+  })
+  .service('Model', function($http) {
+    this.data = function(name) {
+      return $http.get('/uploads/'+name);
+    };
+    this.all = function() {
+      return $http.get('/uploads');
+    };
+    this.remove = function(name) {
+      return $http.delete('/uploads/'+name);
+    };
+    this.beadify = function(name, size) {
+      socket.emit('initialize', {
+        name: name,
+        size: size
+      });
+    };
   })
   .controller('FrontPageController', function($scope, $location) {
     $scope.pattern = '';
@@ -99,6 +117,32 @@ angular.module('beads3d', ['ui.bootstrap-slider', 'ngRoute', 'infinite-scroll'])
           }
       };
   })*/
+  .filter('bytes', function() {
+    return function (num) {
+      if (typeof num !== 'number') {
+        throw new TypeError('Expected a number');
+      }
+
+      var exponent;
+      var unit;
+      var neg = num < 0;
+      var units = ['B', 'kB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB'];
+
+      if (neg) {
+        num = -num;
+      }
+
+      if (num < 1) {
+        return (neg ? '-' : '') + num + ' B';
+      }
+
+      exponent = Math.min(Math.floor(Math.log(num) / Math.log(1000)), units.length - 1);
+      num = Number((num / Math.pow(1000, exponent)).toFixed(2));
+      unit = units[exponent];
+
+      return (neg ? '-' : '') + num + ' ' + unit;
+    };
+  })
   .directive('viewer', function() {
     return {
       restrict: 'E',

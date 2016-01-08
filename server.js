@@ -9,6 +9,7 @@ var cookieParser = require('cookie-parser');
 var ioCookieParser = require('socket.io-cookie-parser');
 var session = require('./middleware/session');
 var Model = require('./resources/Model');
+var database = require('./database/index');
 
 server.listen(8080);
 
@@ -26,7 +27,7 @@ app.get('/', function (req, res) {
 });
 
 app.post('/uploads', upload.single('file'), function(req, res) {
-	Model.create(req.file.buffer, req.session)
+	Model.create(req.file.originalname, req.file.buffer, req.session)
     .then(function(model) {
       console.log('Creating model... '+model.name);
       res.send(model.name);
@@ -45,6 +46,7 @@ app.get('/uploads', function(req, res) {
     models.forEach(function(model) {
       result.push({
         name: model.name,
+        displayName: model.displayName,
         size: model.size
       });
     });
@@ -67,6 +69,17 @@ app.get('/uploads/:name', function(req, res) {
     });
 });
 
+app.delete('/uploads/:name', function(req, res) {
+  Model.data(req.session, req.params.name)
+    .then(function() {
+      console.log('Deleting model "'+req.params.name+'"... OK');
+      res.end();
+    }, function(err) {
+      console.log('Reading model "'+req.params.name+'"... FAIL: '+err.message);
+      res.status(500).send(err.message);
+    });
+});
+
 io.sockets.on('connection', function (socket) {
 	socket.on('initialize', function (data) {
     Model.beadify(socket.request.session, data.name, data.size)
@@ -81,5 +94,13 @@ io.sockets.on('connection', function (socket) {
 });
 
 console.log('Running!');
+
+if(app.settings.env !== 'production') {
+  console.log('Initializing development environment');
+  //TODO clear database
+  //TODO empty models
+  //TODO empty images
+  //TODO add dummy model, session and image
+}
 
 module.exports = app;

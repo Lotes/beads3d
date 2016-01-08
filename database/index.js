@@ -1,3 +1,4 @@
+var Q = require('q');
 var mongoose = require('mongoose');
 var Schema = mongoose.Schema;
 
@@ -25,6 +26,7 @@ var ImageSchema = new Schema({
 });
 
 var ModelSchema = new Schema({
+  displayName: String,
   name: { type: String, index: { unique: true } }, //==folder name in models directory
   uploadedAt: { type: Date, 'default': Date.now },
   session: { type: Schema.ObjectId, ref: 'sessions' },

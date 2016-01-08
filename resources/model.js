@@ -14,7 +14,7 @@ var beadifiers = {};
  * when session space was exceeded.
  * TODO ensure unique key nicely
  */
-function create(buffer, session) {
+function create(displayName, buffer, session) {
   var deferred = Q.defer();
   getUsedSpace(session).then(function(space) {
     if(space + buffer.length > Config.MODELS_MAX_SPACE_PER_SESSION)
@@ -30,6 +30,7 @@ function create(buffer, session) {
           else {
             var model = new Model({
               name: name,
+              displayName: displayName,
               session: session,
               size: buffer.length
             });
@@ -76,6 +77,7 @@ function getUsedSpace(session) {
 
 /**
  * Removes a model for the given session.
+ * TODO what if non-existing?
  */
 function remove(session, name) {
   var deferred = Q.defer();
@@ -173,6 +175,9 @@ function beadify(session, name, size) {
   return deferred.promise;
 }
 
+function clear() {
+  
+}
 
 module.exports = {
   beadify: beadify,
