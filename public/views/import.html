@@ -6,13 +6,48 @@
   <div class="dz-error-message"><span data-dz-errormessage></span></div>
 </div>
 
+<h2>Uploads</h2>
+
+<button class="btn btn-default" ng-click="refresh()" title="Refresh">
+  <span class="glyphicon glyphicon-refresh"/>
+</button>
+
 <div>
-  <ul>
-    <li ng-repeat="model in models">
-      {{model.displayName}} ({{model.size | bytes}})
-      <a ng-href="{{'/uploads/'+model.name}}" target="_blank" title="Download" class="action"><span class="glyphicon glyphicon-download-alt"/></a> 
-      <a ng-click="removeModel(model.name)" title="Remove model" class="action"><span class="glyphicon glyphicon-trash"/></a>
+  <ul class="list-group">
+    <li class="list-group-item" ng-repeat="model in models">
+      <label>
+        <input type="radio" ng-value="model.name" ng-model="selection.model"/>
+        {{model.displayName}}
+        <span class="badge">{{model.size | bytes}}</span>
+      </label>
     </li>
   </ul>
-  List of uploaded models, File operations (delete), Size
 </div>
+
+<button class="btn btn-primary" ng-click="next()" ng-disabled="selection.model == null">
+  SELECT
+</button>
+<button class="btn btn-default" ng-click="download(selection.model)" ng-disabled="selection.model == null" title="Download">
+  <span class="glyphicon glyphicon-download-alt"/>
+</button>
+<button class="btn btn-danger" ng-click="tryRemoveModel(selection.model)" ng-disabled="selection.model == null" title="Remove">
+  <span class="glyphicon glyphicon-trash"/>
+</button>
+
+<div id="removeDialog" class="modal fade" tabindex="-1" role="dialog">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+        <h4 class="modal-title">Deletion</h4>
+      </div>
+      <div class="modal-body">
+        <p>Do you really want to delete this model?</p>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-primary" ng-click="removeModel()">Yes</button>
+        <button type="button" class="btn btn-default" data-dismiss="modal">No</button>
+      </div>
+    </div><!-- /.modal-content -->
+  </div><!-- /.modal-dialog -->
+</div><!-- /.modal -->

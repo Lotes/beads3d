@@ -38,22 +38,39 @@ angular.module('beads3d', ['ui.bootstrap-slider', 'ngRoute', 'infinite-scroll'])
       })
       .when('/import', {
         templateUrl: 'views/import.html',
-        controller: function($scope, Model) {
+        controller: function($scope, Model, $window) {
           var uploadZone = new Dropzone('div#upload-zone', { url: '/uploads' });
           uploadZone.on('complete', function(data) {
             console.log(data);
           });
           
+          $scope.selection = {};
+          $scope.selection.model = null;
           $scope.models = [];
           $scope.refresh = function() {
             Model.all().then(function(res) {
               $scope.models = res.data;
-            }, function(err) {
-              console.log(err);
+              if($scope.models.length > 0)
+                $scope.selection.model = $scope.models[0].name;
             });
           };
-          $scope.removeModel = function(name) {
-            Model.remove(name).then(function() {
+          $scope.next = function() {
+            alert($scope.selection.model);
+          };
+          
+          $scope.download = function(name) {
+            $window.open('/uploads/'+name);
+          };
+          
+          var toRemove;
+          $scope.tryRemoveModel = function(name) {
+            toRemove = name;
+            $('#removeDialog').modal('show');
+          };
+          $scope.removeModel = function() {
+            $('#removeDialog').modal('hide');
+            $scope.selection.model = null;
+            Model.remove(toRemove).then(function() {
               $scope.refresh();
             });
           };
