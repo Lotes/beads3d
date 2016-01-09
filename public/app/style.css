@@ -35,3 +35,7 @@ html, body {
 .dz-upload {
   background-color: #4040FF;
 }
+
+.action {
+  cursor: pointer;
+}

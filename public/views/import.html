@@ -9,8 +9,9 @@
 <div>
   <ul>
     <li ng-repeat="model in models">
-      <a ng-href="{{'/uploads/'+model.name}}">{{model.displayName}} ({{model.size | bytes}})</a> 
-      <a ng-click="removeModel(model.name)" title="Remove model"><span class="glyphicon glyphicon-trash"/></a>
+      {{model.displayName}} ({{model.size | bytes}})
+      <a ng-href="{{'/uploads/'+model.name}}" target="_blank" title="Download" class="action"><span class="glyphicon glyphicon-download-alt"/></a> 
+      <a ng-click="removeModel(model.name)" title="Remove model" class="action"><span class="glyphicon glyphicon-trash"/></a>
     </li>
   </ul>
   List of uploaded models, File operations (delete), Size

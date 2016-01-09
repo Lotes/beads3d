@@ -3,6 +3,7 @@ var database = require('../database/index');
 var Model = database.Model;
 var randomString = require('./randomString');
 var fs = require('fs');
+var fse = require('fs-extra');
 var Config = require('../config');
 var process = require('child_process');
 
@@ -77,16 +78,25 @@ function getUsedSpace(session) {
 
 /**
  * Removes a model for the given session.
- * TODO what if non-existing?
  */
 function remove(session, name) {
   var deferred = Q.defer();
-  Model.remove({
+  Model.findOne({
     session: session,
     name: name
-  }, function(err) {
+  }, function(err, model) {
     if(err) deferred.reject(err);
-    else deferred.resolve();
+    else if(model === null) deferred.reject(new Error('Model not found!'));
+    else model.remove(function(err) {
+      if(err) deferred.reject(err);
+      else {
+        var path = Config.MODELS_PATH + '/' + name;
+        fse.remove(path, function(err) {
+          if(err) deferred.reject(err);
+          else deferred.resolve();    
+        });
+      }
+    });
   });
   return deferred.promise;
 }
@@ -175,8 +185,29 @@ function beadify(session, name, size) {
   return deferred.promise;
 }
 
+function clearDirectory() {
+  var deferred = Q.defer();
+  fse.emptyDir(Config.MODELS_PATH, function(err) {
+    if(err) deferred.reject(err);
+    else deferred.resolve();
+  });
+  return deferred.promise;
+}
+
+function clearDatabase() {
+  var deferred = Q.defer();
+  Model.remove({}, function(err) {
+    if(err) deferred.reject(err);
+    else deferred.resolve();
+  });
+  return deferred.promise;
+}
+
 function clear() {
-  
+  return Q.all([
+    clearDirectory(),
+    clearDatabase()
+  ]);
 }
 
 module.exports = {
@@ -185,5 +216,6 @@ module.exports = {
   remove: remove,
   getUsedSpace: getUsedSpace,
   data: data,
-  create: create
+  create: create,
+  clear: clear
 };

@@ -25,7 +25,7 @@ function session(req, res, next) {
           Session.access(cookie).then(next, next);
         } else {
           console.log('Session is not ok! -> clear & refresh');
-          res.cookie(SESSION_ID, null);
+          res.clearCookie(SESSION_ID);
           res.redirect(req.originalUrl);
         }
       }, next);

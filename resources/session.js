@@ -10,10 +10,11 @@ module.exports = {
   MAX_AGE_IN_DAYS: MAX_AGE_IN_DAYS,
   /**
    * Creates a new session and returns the session object.
+   * @param sessionId {String} optional session id string
    */
-  create: function createNew() {
+  create: function createNew(sessionId) {
     var deferred = Q.defer();
-    var sessionId = randomString(SESSION_ID_LENGTH);
+    sessionId = sessionId || randomString(SESSION_ID_LENGTH);
     var session = new Session({
       cookie: sessionId
     });
@@ -51,6 +52,17 @@ module.exports = {
       lastAccessAt: Date.now() 
     }).exec(function(err) {
       deferred.resolve();
+    });
+    return deferred.promise;
+  },
+  /**
+   * Clears the database from all sessions.
+   */
+  clear: function() {
+    var deferred = Q.defer();
+    Session.remove({}, function(err) {
+      if(err) deferred.reject(err);
+      else deferred.resolve();
     });
     return deferred.promise;
   }
