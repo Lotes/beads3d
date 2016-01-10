@@ -1,5 +1,7 @@
+div[ng-view],
 html, body {
   min-height: 100%;
+  height: 100%;
 }
 
 .viewer {
@@ -45,5 +47,10 @@ html, body {
   margin: 0;
   padding: 10px;
   width: 100%;
+  height: 100%;
+}
+
+.fill { 
+  min-height: 100%;
   height: 100%;
 }

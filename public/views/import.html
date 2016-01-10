@@ -1,39 +1,48 @@
-<h2>Models
-  <form>
-    <input id="uploadButton" type="file" file-model="uploadFile" style="display: none" accept=".obj"/>
-  </form>
-  <button class="btn btn-default" ng-click="upload()" title="Upload" ng-disabled="uploading">
-    <span ng-hide="uploading"><span class="glyphicon glyphicon-upload"/> UPLOAD</span>
-    <div class="progress" ng-hide="!uploading" style="width: 50px; margin: 0;">
-      <div class="progress-bar" role="progressbar" ng-style="{ width: uploadProgress+'%' }"></div>
+<div class="container-fluid fill">
+  <div class="row fill">
+    <div class="col-sm-6 fill">
+      <h2>Models
+        <form style="display: none">
+          <input id="uploadButton" type="file" file-model="uploadFile" accept=".obj"/>
+        </form>
+        <button class="btn btn-default" ng-click="upload()" title="Upload" ng-disabled="uploading">
+          <span ng-hide="uploading"><span class="glyphicon glyphicon-upload"/> UPLOAD</span>
+          <div class="progress" ng-hide="!uploading" style="width: 50px; margin: 0;">
+            <div class="progress-bar" role="progressbar" ng-style="{ width: uploadProgress+'%' }"></div>
+          </div>
+        </button>
+        <button class="btn btn-default" ng-click="refresh()" title="Refresh">
+          <span class="glyphicon glyphicon-refresh"/>
+        </button>
+      </h2>
+      
+      <div>
+        <ul class="list-group">
+          <li ng-class="{ 'list-group-item-action': true, 'list-group-item': true, active: selection.model == model.name }" ng-repeat="model in models">
+            <label>
+              <input type="radio" ng-value="model.name" ng-model="selection.model"/>
+              {{model.displayName}}
+              <span class="badge">{{model.size | bytes}}</span>
+            </label>
+          </li>
+        </ul>
+      </div>
+
+      <button class="btn btn-default" ng-click="download(selection.model)" ng-disabled="selection.model == null" title="Download">
+        <span class="glyphicon glyphicon-download"/>
+      </button>
+      <button class="btn btn-danger" ng-click="tryRemoveModel(selection.model)" ng-disabled="selection.model == null" title="Remove">
+        <span class="glyphicon glyphicon-trash"/>
+      </button>
+      <button class="btn btn-success" ng-click="next()" ng-disabled="selection.model == null">
+        NEXT
+      </button>
     </div>
-  </button>
-  <button class="btn btn-default" ng-click="refresh()" title="Refresh">
-    <span class="glyphicon glyphicon-refresh"/>
-  </button>
-</h2>
-
-<div>
-  <ul class="list-group">
-    <li ng-class="{ 'list-group-item-action': true, 'list-group-item': true, active: selection.model == model.name }" ng-repeat="model in models">
-      <label>
-        <input type="radio" ng-value="model.name" ng-model="selection.model"/>
-        {{model.displayName}}
-        <span class="badge">{{model.size | bytes}}</span>
-      </label>
-    </li>
-  </ul>
+    <div class="col-sm-6 fill">
+      <viewer object="selection.model3D"></viewer>
+    </div>
+  </div>
 </div>
-
-<button class="btn btn-default" ng-click="download(selection.model)" ng-disabled="selection.model == null" title="Download">
-  <span class="glyphicon glyphicon-download"/>
-</button>
-<button class="btn btn-danger" ng-click="tryRemoveModel(selection.model)" ng-disabled="selection.model == null" title="Remove">
-  <span class="glyphicon glyphicon-trash"/>
-</button>
-<button class="btn btn-success" ng-click="next()" ng-disabled="selection.model == null">
-  NEXT
-</button>
 
 <div id="removeDialog" class="modal fade" tabindex="-1" role="dialog">
   <div class="modal-dialog">

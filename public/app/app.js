@@ -56,6 +56,26 @@ angular.module('beads3d', ['ui.bootstrap-slider', 'ngRoute', 'infinite-scroll'])
           
           $scope.selection = {};
           $scope.selection.model = null;
+          $scope.selection.model3D = new THREE.Object3D();
+          $scope.$watch('selection.model', function() {
+            $scope.selection.model3D = new THREE.Object3D();
+            if($scope.selection.model === null)
+              return;
+            new THREE.OBJLoader().load('/uploads/'+$scope.selection.model, function(obj) {
+              $scope.selection.model3D = new THREE.Object3D();
+              $scope.selection.model3D.add(obj);
+              var bbox = new THREE.Box3().setFromObject(obj);
+              var size = bbox.size();
+              var scale = 1/Math.max(size.x, size.y, size.z);
+              $scope.selection.model3D.scale.set(scale, scale, scale);
+              $scope.$apply();
+            }, function(progress) {
+              //nothing
+            }, function(err) {
+              console.log(err);
+            });
+          });
+          
           $scope.models = [];
           $scope.refresh = function() {
             Model.all().then(function(res) {
@@ -229,7 +249,7 @@ angular.module('beads3d', ['ui.bootstrap-slider', 'ngRoute', 'infinite-scroll'])
         //renderer
         renderer = new THREE.WebGLRenderer();
         renderer.setPixelRatio(div.devicePixelRatio);
-        renderer.setClearColor(0x8080ff, 1);
+        renderer.setClearColor(0xffffff, 1);
         onWindowResize();
         div.appendChild(renderer.domElement);
 
