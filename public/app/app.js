@@ -5,8 +5,7 @@ angular.module('beads3d', ['ui.bootstrap-slider', 'ngRoute', 'infinite-scroll'])
     socket = io.connect();
     $routeProvider
       .when('/', {
-        templateUrl: 'views/frontpage.html',
-        controller: 'FrontPageController'
+        templateUrl: 'views/frontpage.html'
       })
       .when('/search', {
         templateUrl: 'views/search.html',
@@ -150,10 +149,11 @@ angular.module('beads3d', ['ui.bootstrap-slider', 'ngRoute', 'infinite-scroll'])
       return deferred.promise;
     };
   })
-  .controller('FrontPageController', function($scope, $location) {
-    $scope.pattern = '';
+  .controller('MainController', function($scope, $location) {
+    $scope.searchParameters = {};
+    $scope.searchParameters.pattern = '';
     $scope.search = function() {
-      $location.path('/search/'+encodeURIComponent($scope.pattern));
+      $location.path('/search/'+encodeURIComponent($scope.searchParameters.pattern));
     };
   })
   .controller('SearchController', function($scope, $routeParams, $location) {
