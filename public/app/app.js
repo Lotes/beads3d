@@ -1,14 +1,3 @@
-Dropzone.options.myAwesomeDropzone = {
-  paramName: "file",
-  maxFilesize: 5, // MB
-  accept: function(file, done) {
-	if(file.name.toLowerCase().indexOf('.obj') != file.name.length - 4) 
-		done('Only OBJ files are accepted!');
-    else 
-		done();
-  }
-};
-
 var socket;
 
 angular.module('beads3d', ['ui.bootstrap-slider', 'ngRoute', 'infinite-scroll'])
@@ -38,10 +27,27 @@ angular.module('beads3d', ['ui.bootstrap-slider', 'ngRoute', 'infinite-scroll'])
       })
       .when('/import', {
         templateUrl: 'views/import.html',
-        controller: function($scope, Model, $window) {
-          var uploadZone = new Dropzone('div#upload-zone', { url: '/uploads' });
-          uploadZone.on('complete', function(data) {
-            console.log(data);
+        controller: function($scope, Model, $window, $http) {
+          $scope.uploadFile = null;
+          $scope.upload = function() {
+            $('#uploadButton').click();
+          };
+          $scope.$watch('uploadFile', function() {
+            if($scope.uploadFile == null)
+              return;
+            var fd = new FormData();
+            fd.append('file', $scope.uploadFile);
+            $http.post('/uploads', fd, {
+              transformRequest: angular.identity,
+              headers: {'Content-Type': undefined}
+            })
+            .success(function() {
+              $scope.refresh();
+            })
+            .error(function(err) {
+              alert(err.message);
+            });
+            $scope.uploadFile = null;
           });
           
           $scope.selection = {};
@@ -232,6 +238,21 @@ angular.module('beads3d', ['ui.bootstrap-slider', 'ngRoute', 'infinite-scroll'])
       },
       replace: true,
       template: '<div class="viewer"/>'
+    };
+  })
+  .directive('fileModel', function ($parse) {
+    return {
+        restrict: 'A',
+        link: function(scope, element, attrs) {
+            var model = $parse(attrs.fileModel);
+            var modelSetter = model.assign;
+            
+            element.bind('change', function(){
+                scope.$apply(function(){
+                    modelSetter(scope, element[0].files[0]);
+                });
+            });
+        }
     };
   })
   ;

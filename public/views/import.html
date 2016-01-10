@@ -1,20 +1,16 @@
-<h1>Import OBJ file</h1>
-
-<div id="upload-zone">
-  Drop your OBJ file here!
-  <div class="dz-progress"><span class="dz-upload" data-dz-uploadprogress></span></div>
-  <div class="dz-error-message"><span data-dz-errormessage></span></div>
-</div>
-
-<h2>Uploads</h2>
-
-<button class="btn btn-default" ng-click="refresh()" title="Refresh">
-  <span class="glyphicon glyphicon-refresh"/>
-</button>
+<h2>Models
+  <input id="uploadButton" type="file" file-model="uploadFile" style="display: none" accept=".obj"/>
+  <button class="btn btn-default" ng-click="upload()" title="Upload">
+    <span class="glyphicon glyphicon-upload"/> UPLOAD
+  </button>
+  <button class="btn btn-default" ng-click="refresh()" title="Refresh">
+    <span class="glyphicon glyphicon-refresh"/>
+  </button>
+</h2>
 
 <div>
   <ul class="list-group">
-    <li class="list-group-item" ng-repeat="model in models">
+    <li ng-class="{ 'list-group-item-action': true, 'list-group-item': true, active: selection.model == model.name }" ng-repeat="model in models">
       <label>
         <input type="radio" ng-value="model.name" ng-model="selection.model"/>
         {{model.displayName}}
@@ -24,14 +20,14 @@
   </ul>
 </div>
 
-<button class="btn btn-primary" ng-click="next()" ng-disabled="selection.model == null">
-  SELECT
-</button>
 <button class="btn btn-default" ng-click="download(selection.model)" ng-disabled="selection.model == null" title="Download">
-  <span class="glyphicon glyphicon-download-alt"/>
+  <span class="glyphicon glyphicon-download"/>
 </button>
 <button class="btn btn-danger" ng-click="tryRemoveModel(selection.model)" ng-disabled="selection.model == null" title="Remove">
   <span class="glyphicon glyphicon-trash"/>
+</button>
+<button class="btn btn-success" ng-click="next()" ng-disabled="selection.model == null">
+  NEXT
 </button>
 
 <div id="removeDialog" class="modal fade" tabindex="-1" role="dialog">

@@ -13,6 +13,7 @@ var Session = require('./resources/Session');
 var database = require('./database/index');
 var Config = require('./config');
 var path = require('path');
+var Q = require('q');
 
 server.listen(8080);
 
@@ -30,6 +31,7 @@ app.get('/', function (req, res) {
 });
 
 app.post('/uploads', upload.single('file'), function(req, res) {
+  //TODO OBJ file validator einbauen
 	Model.create(req.file.originalname, req.file.buffer, req.session)
     .then(function(model) {
       console.log('Creating model... '+model.name);
@@ -78,7 +80,7 @@ app.delete('/uploads/:name', function(req, res) {
       console.log('Deleting model "'+req.params.name+'"... OK');
       res.end();
     }, function(err) {
-      console.log('Reading model "'+req.params.name+'"... FAIL: '+err.message);
+      console.log('Deleting model "'+req.params.name+'"... FAIL: '+err.message);
       res.status(500).send(err.message);
     });
 });
@@ -113,10 +115,13 @@ if(app.settings.env !== 'production') {
     .then(function(session) {
       console.log('-created development session "'+session.cookie+'"');
       var data = fs.readFileSync(path.join(Config.DEVELOPMENT_DATA_PATH, 'models', 'pikachu', 'model.obj'));
-      return Model.create('pikachu.obj', data, session);
+      return Q.all([
+        Model.create('pikachu.obj', data, session),
+        Model.create('pikachu2.obj', data, session)
+      ]);
     })
-    .then(function(model) {
-      console.log('-uploaded Pikachu model "'+model.name+'"');
+    .then(function() {
+      console.log('-uploaded Pikachu models');
     })
     .fail(function(err) {
       console.log('-FAIL: '+err.message);

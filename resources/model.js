@@ -6,6 +6,7 @@ var fs = require('fs');
 var fse = require('fs-extra');
 var Config = require('../config');
 var process = require('child_process');
+var path = require('path');
 
 //session id -> process
 var beadifiers = {};
@@ -21,8 +22,8 @@ function create(displayName, buffer, session) {
     if(space + buffer.length > Config.MODELS_MAX_SPACE_PER_SESSION)
       return deferred.reject(new Error('File is too big! Maximum space is '+Config.MODELS_MAX_SPACE_PER_SESSION+' bytes.'));
     var name = randomString(Config.MODEL_NAME_LENGTH);
-    var directoryPath = Config.MODELS_PATH + '/' + name;
-    fs.mkdir(directoryPath, function(err) {
+    var directoryPath = path.join(Config.MODELS_PATH, name);
+    fse.mkdirs(directoryPath, function(err) {
       if(err) deferred.reject(err);
       else {
         var modelPath = directoryPath+'/model.obj';
