@@ -1,7 +1,12 @@
 <h2>Models
-  <input id="uploadButton" type="file" file-model="uploadFile" style="display: none" accept=".obj"/>
-  <button class="btn btn-default" ng-click="upload()" title="Upload">
-    <span class="glyphicon glyphicon-upload"/> UPLOAD
+  <form>
+    <input id="uploadButton" type="file" file-model="uploadFile" style="display: none" accept=".obj"/>
+  </form>
+  <button class="btn btn-default" ng-click="upload()" title="Upload" ng-disabled="uploading">
+    <span ng-hide="uploading"><span class="glyphicon glyphicon-upload"/> UPLOAD</span>
+    <div class="progress" ng-hide="!uploading" style="width: 50px; margin: 0;">
+      <div class="progress-bar" role="progressbar" ng-style="{ width: uploadProgress+'%' }"></div>
+    </div>
   </button>
   <button class="btn btn-default" ng-click="refresh()" title="Refresh">
     <span class="glyphicon glyphicon-refresh"/>

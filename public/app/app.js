@@ -27,27 +27,31 @@ angular.module('beads3d', ['ui.bootstrap-slider', 'ngRoute', 'infinite-scroll'])
       })
       .when('/import', {
         templateUrl: 'views/import.html',
-        controller: function($scope, Model, $window, $http) {
+        controller: function($scope, Model, $window, Uploader) {
+          var uploadButton = $('#uploadButton');
           $scope.uploadFile = null;
+          $scope.uploading = false;
+          $scope.uploadProgress = 0;
           $scope.upload = function() {
-            $('#uploadButton').click();
+            uploadButton.click();
           };
           $scope.$watch('uploadFile', function() {
-            if($scope.uploadFile == null)
+            if($scope.uploadFile === null)
               return;
-            var fd = new FormData();
-            fd.append('file', $scope.uploadFile);
-            $http.post('/uploads', fd, {
-              transformRequest: angular.identity,
-              headers: {'Content-Type': undefined}
-            })
-            .success(function() {
+            Uploader
+            .upload('/uploads', $scope.uploadFile)
+            .then(function() {
+              $scope.uploading = false;
               $scope.refresh();
-            })
-            .error(function(err) {
-              alert(err.message);
+            }, function(e) {
+              $scope.uploading = false;
+              alert(e.message);
+            }, function(progress) {
+              $scope.uploadProgress = progress;
             });
+            $scope.uploading = true;
             $scope.uploadFile = null;
+            uploadButton.parent('form').trigger('reset');
           });
           
           $scope.selection = {};
@@ -104,6 +108,26 @@ angular.module('beads3d', ['ui.bootstrap-slider', 'ngRoute', 'infinite-scroll'])
         name: name,
         size: size
       });
+    };
+  })
+  .service('Uploader', function($q) {
+    this.upload = function(url, file) {
+      var deferred = $q.defer();
+      var form = new FormData();
+      var xhr = new XMLHttpRequest;
+      form.append('file', file);
+      xhr.upload.onprogress = function(e) {
+        deferred.notify(Math.round(e.loaded/e.total*100));
+      };
+      xhr.onload = function() {
+        if(xhr.status === 200)
+          deferred.resolve();
+        else 
+          deferred.reject(new Error(xhr.responseText));
+      };
+      xhr.open('POST', url);
+      xhr.send(form);
+      return deferred.promise;
     };
   })
   .controller('FrontPageController', function($scope, $location) {
