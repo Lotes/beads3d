@@ -30,11 +30,16 @@
               </tr>
               <tr ng-repeat="axis in ['X', 'Y', 'Z']">
                 <td ng-class="{ info: selection.axis == axis }">{{axis}}</td>
-                <td ng-class="{ info: selection.axis == axis }">
-                  <input type="number" min="-360" max="360" ng-model="rotationModel[axis]" ng-focus="selection.axis = axis"/>
-                  <button ng-click="selection.axis = axis" ng-style="{ color: axis == 'X' ? 'red' : (axis == 'Y' ? 'green' : 'blue') }">
-                    <span class="glyphicon glyphicon-arrow-right"/>
-                  </button>
+                <td ng-class="{ info: selection.axis == axis, 'form-inline': true }">
+                  <form class="form-group">
+                    <button class="btn btn-default" title="Reset" ng-click="rotationModel[axis] = 0">
+                      <span class="glyphicon glyphicon-flash"/>
+                    </button>
+                    <input class="form-control" type="number" min="-360" max="360" ng-model="rotationModel[axis]" ng-focus="selection.axis = axis"/>
+                    <button title="Edit in viewer" class="btn btn-default" ng-click="selection.axis = axis" ng-style="{ color: axis == 'X' ? 'red' : (axis == 'Y' ? 'green' : 'blue') }">
+                      <span class="glyphicon glyphicon-arrow-right"/>
+                    </button>
+                  </form>
                 </td>
               </tr>
             </table>    

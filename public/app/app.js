@@ -183,11 +183,11 @@ angular.module('beads3d', ['ui.bootstrap-slider', 'ngRoute', 'mgo-angular-wizard
         'YXZ'
       );
       var model = new THREE.Object3D();
-      var axisHelper = new THREE.AxisHelper(0.5);
-      model.add(axisHelper);
       model.rotation.set(euler.x, euler.y, euler.z, euler.order);
       model.__dirtyRotation = true;
       model.add($scope.scene.model3D);
+      var axisHelper = new THREE.AxisHelper(0.5);
+      model.add(axisHelper);
       
       var bbox = new THREE.Box3().setFromObject(model);
       var size = bbox.size();
@@ -230,7 +230,7 @@ angular.module('beads3d', ['ui.bootstrap-slider', 'ngRoute', 'mgo-angular-wizard
       });
     
     $scope.selection = {};    
-    $scope.selection.axis = 'X';
+    $scope.selection.axis = null;
     $scope.rotationModel = { X: 0, Y: 0, Z: 0 };
     $scope.$watch('rotationModel.X', updateScene);
     $scope.$watch('rotationModel.Y', updateScene);
@@ -340,6 +340,8 @@ angular.module('beads3d', ['ui.bootstrap-slider', 'ngRoute', 'mgo-angular-wizard
         });
         var startRotation, startMouseX, pressing = false;
         function onMouseDown(event) {
+          if(scope.mode === null)
+            return;
           event.preventDefault(); 
           startRotation = scope.rotation[scope.mode];
           pressing = true;
