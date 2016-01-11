@@ -1,0 +1,87 @@
+<wizard on-finish="next()" hide-indicators="true" template="views/wizard.html"> 
+  <wz-step title="position">
+    <div class="container-fluid fill">
+      <div class="row fill">
+        <div ng-include="'views/header.html'"></div>
+        
+        <div class="col-sm-6 fill">
+          <h2>
+            Position
+          </h2>
+          <p>
+            View:<br/>
+            <table class="table table-striped">
+              <tr>
+                <td ng-class="{ info: selection.axis == null }">
+                  Move view 
+                  <button ng-click="selection.axis = null">
+                    <span class="glyphicon glyphicon-move"/>
+                  </button>
+                </td>
+              </tr>
+            </table>
+          </p>
+          <p>
+            Rotation:
+            <table class="table table-striped">
+              <tr>
+                <th>Axis</th>
+                <th>Angle (in &circ;)</th>
+              </tr>
+              <tr ng-repeat="axis in ['X', 'Y', 'Z']">
+                <td ng-class="{ info: selection.axis == axis }">{{axis}}</td>
+                <td ng-class="{ info: selection.axis == axis }">
+                  <input type="number" ng-model="rotationModel[axis]" ng-focus="selection.axis = axis"/>
+                  <button ng-click="selection.axis = axis">
+                    <span class="glyphicon glyphicon-arrow-right"/>
+                  </button>
+                </td>
+              </tr>
+            </table>    
+          </p>
+          <button class="btn btn-default" ng-click="back()">Back</button>
+          <button wz-next class="btn btn-success">NEXT</button>
+        </div>
+        
+        <div class="col-sm-6 fill">
+          <viewer object="selection.model3D"></viewer>
+        </div>
+      </div>
+    </div>
+  </wz-step>
+  <wz-step title="slice">
+    <div class="container-fluid fill">
+      <div class="row fill">
+        <div ng-include="'views/header.html'"></div>
+        
+        <div class="col-sm-6 fill">
+          <h1>Slice</h1>
+          Size, Rotation
+          <button wz-previous class="btn btn-default">Back</button>
+          <button wz-next class="btn btn-success">NEXT</button>
+        </div>
+        
+        <div class="col-sm-6 fill">
+          
+        </div>
+      </div>
+    </div>
+  </wz-step>
+  <wz-step title="confirm">
+    <div class="container-fluid fill">
+      <div class="row fill">
+        <div ng-include="'views/header.html'"></div>
+        
+        <div class="col-sm-6 fill">
+          <h1>Preview</h1>
+          <button wz-previous class="btn btn-default">Back</button>
+          <button wz-next class="btn btn-success">FINISH</button>
+        </div>
+        
+        <div class="col-sm-6 fill">
+          
+        </div>
+      </div>
+    </div>
+  </wz-step>
+</wizard>

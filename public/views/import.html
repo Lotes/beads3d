@@ -16,6 +16,12 @@
         <button class="btn btn-default" ng-click="refresh()" title="Refresh">
           <span class="glyphicon glyphicon-refresh"/>
         </button>
+        <button class="btn btn-default" ng-click="download(selection.model)" ng-disabled="selection.model == null" title="Download">
+          <span class="glyphicon glyphicon-download"/>
+        </button>
+        <button class="btn btn-danger" ng-click="tryRemoveModel(selection.model)" ng-disabled="selection.model == null" title="Remove">
+          <span class="glyphicon glyphicon-trash"/>
+        </button>
       </h2>
       
       <div>
@@ -30,12 +36,7 @@
         </ul>
       </div>
 
-      <button class="btn btn-default" ng-click="download(selection.model)" ng-disabled="selection.model == null" title="Download">
-        <span class="glyphicon glyphicon-download"/>
-      </button>
-      <button class="btn btn-danger" ng-click="tryRemoveModel(selection.model)" ng-disabled="selection.model == null" title="Remove">
-        <span class="glyphicon glyphicon-trash"/>
-      </button>
+      <button class="btn btn-default" ng-click="back()">Back</button>
       <button class="btn btn-success" ng-click="next()" ng-disabled="selection.model == null">
         NEXT
       </button>

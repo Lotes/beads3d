@@ -1,6 +1,6 @@
 var socket;
 
-angular.module('beads3d', ['ui.bootstrap-slider', 'ngRoute', 'infinite-scroll'])
+angular.module('beads3d', ['ui.bootstrap-slider', 'ngRoute', 'mgo-angular-wizard'])
   .config(function($routeProvider, $locationProvider) {
     socket = io.connect();
     $routeProvider
@@ -26,91 +26,15 @@ angular.module('beads3d', ['ui.bootstrap-slider', 'ngRoute', 'infinite-scroll'])
       })
       .when('/import', {
         templateUrl: 'views/import.html',
-        controller: function($scope, Model, $window, Uploader) {
-          var uploadButton = $('#uploadButton');
-          $scope.uploadFile = null;
-          $scope.uploading = false;
-          $scope.uploadProgress = 0;
-          $scope.upload = function() {
-            uploadButton.click();
-          };
-          $scope.$watch('uploadFile', function() {
-            if($scope.uploadFile === null)
-              return;
-            Uploader
-            .upload('/uploads', $scope.uploadFile)
-            .then(function() {
-              $scope.uploading = false;
-              $scope.refresh();
-            }, function(e) {
-              $scope.uploading = false;
-              alert(e.message);
-            }, function(progress) {
-              $scope.uploadProgress = progress;
-            });
-            $scope.uploading = true;
-            $scope.uploadFile = null;
-            uploadButton.parent('form').trigger('reset');
-          });
-          
-          $scope.selection = {};
-          $scope.selection.model = null;
-          $scope.selection.model3D = new THREE.Object3D();
-          $scope.$watch('selection.model', function() {
-            $scope.selection.model3D = new THREE.Object3D();
-            if($scope.selection.model === null)
-              return;
-            new THREE.OBJLoader().load('/uploads/'+$scope.selection.model, function(obj) {
-              $scope.selection.model3D = new THREE.Object3D();
-              $scope.selection.model3D.add(obj);
-              var bbox = new THREE.Box3().setFromObject(obj);
-              var size = bbox.size();
-              var scale = 1/Math.max(size.x, size.y, size.z);
-              $scope.selection.model3D.scale.set(scale, scale, scale);
-              $scope.$apply();
-            }, function(progress) {
-              //nothing
-            }, function(err) {
-              console.log(err);
-            });
-          });
-          
-          $scope.models = [];
-          $scope.refresh = function() {
-            Model.all().then(function(res) {
-              $scope.models = res.data;
-              if($scope.models.length > 0)
-                $scope.selection.model = $scope.models[0].name;
-            });
-          };
-          $scope.next = function() {
-            alert($scope.selection.model);
-          };
-          
-          $scope.download = function(name) {
-            $window.open('/uploads/'+name);
-          };
-          
-          var toRemove;
-          $scope.tryRemoveModel = function(name) {
-            toRemove = name;
-            $('#removeDialog').modal('show');
-          };
-          $scope.removeModel = function() {
-            $('#removeDialog').modal('hide');
-            $scope.selection.model = null;
-            Model.remove(toRemove).then(function() {
-              $scope.refresh();
-            });
-          };
-          
-          $scope.refresh();
-        }
+        controller: 'ImportController'
+      })
+      .when('/beadify/:model', {
+        templateUrl: 'views/beadify.html',
+        controller: 'BeadifyController'
       })
       .otherwise({
         redirectTo: '/'
-      })
-      ;
+      });
   })
   .service('Model', function($http) {
     this.data = function(name) {
@@ -154,6 +78,119 @@ angular.module('beads3d', ['ui.bootstrap-slider', 'ngRoute', 'infinite-scroll'])
     $scope.searchParameters.pattern = '';
     $scope.search = function() {
       $location.path('/search/'+encodeURIComponent($scope.searchParameters.pattern));
+    };
+  })
+  .controller('ImportController', function($scope, Model, $window, Uploader, $location) {
+    var uploadButton = $('#uploadButton');
+    $scope.uploadFile = null;
+    $scope.uploading = false;
+    $scope.uploadProgress = 0;
+    $scope.upload = function() {
+      uploadButton.click();
+    };
+    $scope.$watch('uploadFile', function() {
+      if($scope.uploadFile === null)
+        return;
+      Uploader
+      .upload('/uploads', $scope.uploadFile)
+      .then(function() {
+        $scope.uploading = false;
+        $scope.refresh();
+      }, function(e) {
+        $scope.uploading = false;
+        alert(e.message);
+      }, function(progress) {
+        $scope.uploadProgress = progress;
+      });
+      $scope.uploading = true;
+      $scope.uploadFile = null;
+      uploadButton.parent('form').trigger('reset');
+    });
+    
+    $scope.selection = {};
+    $scope.selection.model = null;
+    $scope.selection.model3D = new THREE.Object3D();
+    $scope.$watch('selection.model', function() {
+      $scope.selection.model3D = new THREE.Object3D();
+      if($scope.selection.model === null)
+        return;
+      new THREE.OBJLoader().load('/uploads/'+$scope.selection.model, function(obj) {
+        $scope.selection.model3D = new THREE.Object3D();
+        $scope.selection.model3D.add(obj);
+        var bbox = new THREE.Box3().setFromObject(obj);
+        var size = bbox.size();
+        var scale = 1/Math.max(size.x, size.y, size.z);
+        $scope.selection.model3D.scale.set(scale, scale, scale);
+        $scope.$apply();
+      }, function(progress) {
+        //nothing
+      }, function(err) {
+        console.log(err);
+      });
+    });
+    
+    $scope.models = [];
+    $scope.refresh = function() {
+      Model.all().then(function(res) {
+        $scope.models = res.data;
+        if($scope.models.length > 0)
+          $scope.selection.model = $scope.models[0].name;
+      });
+    };
+    $scope.next = function() {
+      $location.path('/beadify/'+$scope.selection.model);
+    };
+    $scope.back = function() {
+      $location.path('/new');
+    };
+    
+    $scope.download = function(name) {
+      $window.open('/uploads/'+name);
+    };
+    
+    var toRemove;
+    $scope.tryRemoveModel = function(name) {
+      toRemove = name;
+      $('#removeDialog').modal('show');
+    };
+    $scope.removeModel = function() {
+      $('#removeDialog').modal('hide');
+      $scope.selection.model = null;
+      Model.remove(toRemove).then(function() {
+        $scope.refresh();
+      });
+    };
+    
+    $scope.refresh();
+  })
+  .controller('BeadifyController', function($scope, $location, $routeParams) {
+    $scope.selection = {};
+    $scope.selection.model3D = new THREE.Object3D();
+    new THREE.OBJLoader().load('/uploads/'+$routeParams.model, function(obj) {
+      $scope.selection.model3D = new THREE.Object3D();
+      $scope.selection.model3D.add(obj);
+      var bbox = new THREE.Box3().setFromObject(obj);
+      var size = bbox.size();
+      var scale = 1/Math.max(size.x, size.y, size.z);
+      $scope.selection.model3D.scale.set(scale, scale, scale);
+      $scope.$apply();
+    }, function(progress) {
+      //nothing
+    }, function(err) {
+      console.log(err);
+    });
+     
+    $scope.selection.axis = 'X';
+    $scope.rotationModel = {
+      X: 0,
+      Y: 0,
+      Z: 0
+    };
+    $scope.back = function() {
+      $location.path('/import');
+    };
+    $scope.next = function() {
+      $location.path('/edit');
     };
   })
   .controller('SearchController', function($scope, $routeParams, $location) {
