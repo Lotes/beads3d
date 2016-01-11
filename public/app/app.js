@@ -53,7 +53,7 @@ angular.module('beads3d', ['ui.bootstrap-slider', 'ngRoute', 'mgo-angular-wizard
       });
     };
   })
-  .service('Uploader', function($q) {
+  .service('Loader', function($q) {
     this.upload = function(url, file) {
       var deferred = $q.defer();
       var form = new FormData();
@@ -72,6 +72,17 @@ angular.module('beads3d', ['ui.bootstrap-slider', 'ngRoute', 'mgo-angular-wizard
       xhr.send(form);
       return deferred.promise;
     };
+    this.loadOBJ = function(url) {
+      var deferred = $q.defer();
+      new THREE.OBJLoader().load(url, function(obj) {
+        deferred.resolve(obj.children[0]);
+      }, function(progress) {
+        //nothing
+      }, function(err) {
+        deferred.reject(err);
+      });
+      return deferred.promise;
+    };
   })
   .controller('MainController', function($scope, $location) {
     $scope.searchParameters = {};
@@ -80,7 +91,7 @@ angular.module('beads3d', ['ui.bootstrap-slider', 'ngRoute', 'mgo-angular-wizard
       $location.path('/search/'+encodeURIComponent($scope.searchParameters.pattern));
     };
   })
-  .controller('ImportController', function($scope, Model, $window, Uploader, $location) {
+  .controller('ImportController', function($scope, Model, $window, Loader, $location) {
     var uploadButton = $('#uploadButton');
     $scope.uploadFile = null;
     $scope.uploading = false;
@@ -91,7 +102,7 @@ angular.module('beads3d', ['ui.bootstrap-slider', 'ngRoute', 'mgo-angular-wizard
     $scope.$watch('uploadFile', function() {
       if($scope.uploadFile === null)
         return;
-      Uploader
+      Loader
       .upload('/uploads', $scope.uploadFile)
       .then(function() {
         $scope.uploading = false;
@@ -114,19 +125,15 @@ angular.module('beads3d', ['ui.bootstrap-slider', 'ngRoute', 'mgo-angular-wizard
       $scope.selection.model3D = new THREE.Object3D();
       if($scope.selection.model === null)
         return;
-      new THREE.OBJLoader().load('/uploads/'+$scope.selection.model, function(obj) {
-        $scope.selection.model3D = new THREE.Object3D();
-        $scope.selection.model3D.add(obj);
-        var bbox = new THREE.Box3().setFromObject(obj);
-        var size = bbox.size();
-        var scale = 1/Math.max(size.x, size.y, size.z);
-        $scope.selection.model3D.scale.set(scale, scale, scale);
-        $scope.$apply();
-      }, function(progress) {
-        //nothing
-      }, function(err) {
-        console.log(err);
-      });
+      Loader.loadOBJ('/uploads/'+$scope.selection.model)
+        .then(function(obj) {
+          $scope.selection.model3D = new THREE.Object3D();
+          $scope.selection.model3D.add(obj);
+          var bbox = new THREE.Box3().setFromObject(obj);
+          var size = bbox.size();
+          var scale = 1/Math.max(size.x, size.y, size.z);
+          $scope.selection.model3D.scale.set(scale, scale, scale);
+        });
     });
     
     $scope.models = [];
@@ -163,29 +170,72 @@ angular.module('beads3d', ['ui.bootstrap-slider', 'ngRoute', 'mgo-angular-wizard
     
     $scope.refresh();
   })
-  .controller('BeadifyController', function($scope, $location, $routeParams) {
-    $scope.selection = {};
-    $scope.selection.model3D = new THREE.Object3D();
-    new THREE.OBJLoader().load('/uploads/'+$routeParams.model, function(obj) {
-      $scope.selection.model3D = new THREE.Object3D();
-      $scope.selection.model3D.add(obj);
-      var bbox = new THREE.Box3().setFromObject(obj);
+  .controller('BeadifyController', function($scope, $location, $routeParams, Loader) {
+    $scope.scene = {};
+    $scope.scene.model3D = new THREE.Object3D();
+    $scope.scene.cube = new THREE.Object3D();
+    $scope.scene.composition = new THREE.Object3D();
+    function updateScene() {
+      var euler = new THREE.Euler(
+        $scope.rotationModel.X / 180 * Math.PI,
+        $scope.rotationModel.Y / 180 * Math.PI,
+        $scope.rotationModel.Z / 180 * Math.PI,
+        'YXZ'
+      );
+      var model = new THREE.Object3D();
+      var axisHelper = new THREE.AxisHelper(0.5);
+      model.add(axisHelper);
+      model.rotation.set(euler.x, euler.y, euler.z, euler.order);
+      model.__dirtyRotation = true;
+      model.add($scope.scene.model3D);
+      
+      var bbox = new THREE.Box3().setFromObject(model);
       var size = bbox.size();
-      var scale = 1/Math.max(size.x, size.y, size.z);
-      $scope.selection.model3D.scale.set(scale, scale, scale);
-      $scope.$apply();
-    }, function(progress) {
-      //nothing
-    }, function(err) {
-      console.log(err);
-    });
-     
+      var box = new THREE.Object3D();
+      box.position.set(bbox.min.x, bbox.min.y, bbox.min.z);
+      box.scale.set(size.x, size.y, size.z);
+      box.add($scope.scene.cube);
+      var axisHelper = new THREE.AxisHelper(1);
+      box.add(axisHelper);
+      
+      $scope.scene.composition = new THREE.Object3D();
+      $scope.scene.composition.add(model);
+      $scope.scene.composition.add(box);
+    }
+    Loader.loadOBJ('/uploads/'+$routeParams.model)
+      .then(function(obj) {
+        $scope.scene.model3D = new THREE.Object3D();
+        $scope.scene.model3D.add(obj);
+        var bbox = new THREE.Box3().setFromObject(obj);
+        var size = bbox.size();
+        var scale = 1/Math.max(size.x, size.y, size.z);
+        $scope.scene.model3D.scale.set(scale, scale, scale);
+        updateScene();
+      });
+    Loader.loadOBJ('/app/invertedCube.obj')
+      .then(function(obj) {
+        var container = new THREE.Object3D();
+        var geometry = obj.geometry;
+        var material = new THREE.MeshLambertMaterial({
+          color: 0x0000ff,
+          transparent: true,
+          opacity: 0.1
+        });
+        var mesh = new THREE.Mesh(geometry, material);
+        container.add(mesh);
+        container.position.set(0.5, 0.5, 0.5);
+        $scope.scene.cube = new THREE.Object3D();
+        $scope.scene.cube.add(container);
+        updateScene();
+      });
+    
+    $scope.selection = {};    
     $scope.selection.axis = 'X';
-    $scope.rotationModel = {
-      X: 0,
-      Y: 0,
-      Z: 0
-    };
+    $scope.rotationModel = { X: 0, Y: 0, Z: 0 };
+    $scope.$watch('rotationModel.X', updateScene);
+    $scope.$watch('rotationModel.Y', updateScene);
+    $scope.$watch('rotationModel.Z', updateScene);
+    
     $scope.back = function() {
       $location.path('/import');
     };
@@ -207,20 +257,6 @@ angular.module('beads3d', ['ui.bootstrap-slider', 'ngRoute', 'mgo-angular-wizard
         $scope.results.push($scope.pattern+$scope.results.length);
     };
   })
-  /*.directive('whenScrolled', function ($document) {
-      return {
-          restrict: 'A',
-          link: function (scope, element, attrs) {
-              var raw = element[0];
-              $document.bind('scroll', function () {
-                  console.log(raw.scrollTop+'+'+raw.offsetHeight+'>'+raw.scrollHeight);
-                  if (raw.scrollTop + raw.offsetHeight >= raw.scrollHeight) {
-                      scope.$apply(attrs.whenScrolled);
-                  }
-              });
-          }
-      };
-  })*/
   .filter('bytes', function() {
     return function (num) {
       if (typeof num !== 'number') {
@@ -251,7 +287,9 @@ angular.module('beads3d', ['ui.bootstrap-slider', 'ngRoute', 'mgo-angular-wizard
     return {
       restrict: 'E',
       scope: {
-        'object': '='
+        'object': '=',
+        'rotation': '=',
+        'mode': '='
       },
       link: function(scope, element, attr) {
         var camera, scene, renderer, controls, div;
@@ -273,8 +311,8 @@ angular.module('beads3d', ['ui.bootstrap-slider', 'ngRoute', 'mgo-angular-wizard
         }
       
         camera = new THREE.PerspectiveCamera( 45, window.innerWidth / window.innerHeight, 1, 2000 );
-        camera.position.set(2, 2, 2)
-        camera.lookAt(new THREE.Vector3())
+        camera.position.set(2, 2, 2);
+        camera.lookAt(new THREE.Vector3());
     
         // scene
         scene = new THREE.Scene();
@@ -294,7 +332,38 @@ angular.module('beads3d', ['ui.bootstrap-slider', 'ngRoute', 'mgo-angular-wizard
         controls = new THREE.OrbitControls( camera, renderer.domElement );
         controls.enableDamping = false;
         controls.enableZoom = true;
+        controls.enablePan = false;
 
+        //rotation handling
+        scope.$watch('mode', function() {
+          controls.enabled = scope.mode === null;
+        });
+        var startRotation, startMouseX, pressing = false;
+        function onMouseDown(event) {
+          event.preventDefault(); 
+          startRotation = scope.rotation[scope.mode];
+          pressing = true;
+          startMouseX = event.clientX;
+        }
+        function onMouseUp(event) {
+          pressing = false;
+          event.preventDefault(); 
+        }
+        function onMouseMove(event) {
+          if(!pressing)
+            return;
+          event.preventDefault(); 
+          var delta = event.clientX - startMouseX;
+          var size = renderer.domElement.clientWidth;
+          var deltaAngle = Math.floor(delta / size * 180);
+          var angle = startRotation + deltaAngle;
+          scope.rotation[scope.mode] = angle % 360;
+          scope.$apply();
+        }
+        renderer.domElement.addEventListener('mousemove', onMouseMove, false);
+				renderer.domElement.addEventListener('mouseup', onMouseUp, false);
+				renderer.domElement.addEventListener('mousedown', onMouseDown, false);
+        
         //window events
         window.addEventListener('resize', onWindowResize, false);
         

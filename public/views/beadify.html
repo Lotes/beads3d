@@ -31,8 +31,8 @@
               <tr ng-repeat="axis in ['X', 'Y', 'Z']">
                 <td ng-class="{ info: selection.axis == axis }">{{axis}}</td>
                 <td ng-class="{ info: selection.axis == axis }">
-                  <input type="number" ng-model="rotationModel[axis]" ng-focus="selection.axis = axis"/>
-                  <button ng-click="selection.axis = axis">
+                  <input type="number" min="-360" max="360" ng-model="rotationModel[axis]" ng-focus="selection.axis = axis"/>
+                  <button ng-click="selection.axis = axis" ng-style="{ color: axis == 'X' ? 'red' : (axis == 'Y' ? 'green' : 'blue') }">
                     <span class="glyphicon glyphicon-arrow-right"/>
                   </button>
                 </td>
@@ -44,7 +44,11 @@
         </div>
         
         <div class="col-sm-6 fill">
-          <viewer object="selection.model3D"></viewer>
+          <viewer 
+            object="scene.composition"
+            rotation="rotationModel"
+            mode="selection.axis"
+          ></viewer>
         </div>
       </div>
     </div>
