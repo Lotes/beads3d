@@ -170,47 +170,20 @@ angular.module('beads3d', ['ui.bootstrap-slider', 'ngRoute', 'mgo-angular-wizard
     
     $scope.refresh();
   })
-  .controller('BeadifyController', function($scope, $location, $routeParams, Loader) {
-    $scope.scene = {};
-    $scope.scene.model3D = new THREE.Object3D();
-    $scope.scene.cube = new THREE.Object3D();
-    $scope.scene.composition = new THREE.Object3D();
-    function updateScene() {
-      var euler = new THREE.Euler(
-        $scope.rotationModel.X / 180 * Math.PI,
-        $scope.rotationModel.Y / 180 * Math.PI,
-        $scope.rotationModel.Z / 180 * Math.PI,
-        'YXZ'
-      );
-      var model = new THREE.Object3D();
-      model.rotation.set(euler.x, euler.y, euler.z, euler.order);
-      model.__dirtyRotation = true;
-      model.add($scope.scene.model3D);
-      var axisHelper = new THREE.AxisHelper(0.5);
-      model.add(axisHelper);
-      
-      var bbox = new THREE.Box3().setFromObject(model);
-      var size = bbox.size();
-      var box = new THREE.Object3D();
-      box.position.set(bbox.min.x, bbox.min.y, bbox.min.z);
-      box.scale.set(size.x, size.y, size.z);
-      box.add($scope.scene.cube);
-      var axisHelper = new THREE.AxisHelper(1);
-      box.add(axisHelper);
-      
-      $scope.scene.composition = new THREE.Object3D();
-      $scope.scene.composition.add(model);
-      $scope.scene.composition.add(box);
-    }
+  .controller('BeadifyController', function($scope, $location, $routeParams, Loader) {    
+    var loader = {
+      model: new THREE.Object3D(),
+      cube: new THREE.Object3D()
+    };
     Loader.loadOBJ('/uploads/'+$routeParams.model)
       .then(function(obj) {
-        $scope.scene.model3D = new THREE.Object3D();
-        $scope.scene.model3D.add(obj);
+        loader.model = new THREE.Object3D();
+        loader.model.add(obj);
         var bbox = new THREE.Box3().setFromObject(obj);
         var size = bbox.size();
         var scale = 1/Math.max(size.x, size.y, size.z);
-        $scope.scene.model3D.scale.set(scale, scale, scale);
-        updateScene();
+        loader.model.scale.set(scale, scale, scale);
+        updateTransformerScene();
       });
     Loader.loadOBJ('/app/invertedCube.obj')
       .then(function(obj) {
@@ -224,18 +197,138 @@ angular.module('beads3d', ['ui.bootstrap-slider', 'ngRoute', 'mgo-angular-wizard
         var mesh = new THREE.Mesh(geometry, material);
         container.add(mesh);
         container.position.set(0.5, 0.5, 0.5);
-        $scope.scene.cube = new THREE.Object3D();
-        $scope.scene.cube.add(container);
-        updateScene();
+        loader.cube = new THREE.Object3D();
+        loader.cube.add(container);
+        updateTransformerScene();
       });
     
-    $scope.selection = {};    
-    $scope.selection.axis = null;
-    $scope.rotationModel = { X: 0, Y: 0, Z: 0 };
-    $scope.$watch('rotationModel.X', updateScene);
-    $scope.$watch('rotationModel.Y', updateScene);
-    $scope.$watch('rotationModel.Z', updateScene);
+    //=== TRANSFORMER ===
+    $scope.transformer = {
+      scene: new THREE.Object3D(),
+      mode: null,
+      rotation: {
+        X: 90,
+        Y: 180,
+        Z: 0
+      },
+    };
+    $scope.$watch('transformer.rotation.X', updateTransformerScene);
+    $scope.$watch('transformer.rotation.Y', updateTransformerScene);
+    $scope.$watch('transformer.rotation.Z', updateTransformerScene);
+    function updateTransformerScene() {
+      var euler = new THREE.Euler(
+        $scope.transformer.rotation.X / 180 * Math.PI,
+        $scope.transformer.rotation.Y / 180 * Math.PI,
+        $scope.transformer.rotation.Z / 180 * Math.PI,
+        'YXZ'
+      );
+      var model = new THREE.Object3D();
+      model.rotation.set(euler.x, euler.y, euler.z, euler.order);
+      model.__dirtyRotation = true;
+      model.add(loader.model.clone());
+      var axisHelper = new THREE.AxisHelper(0.5);
+      model.add(axisHelper);
+      
+      var bbox = new THREE.Box3().setFromObject(model);
+      var size = bbox.size();
+      var box = new THREE.Object3D();
+      box.position.set(bbox.min.x, bbox.min.y, bbox.min.z);
+      box.scale.set(size.x, size.y, size.z);
+      box.add(loader.cube.clone());
+      var axisHelper = new THREE.AxisHelper(1);
+      box.add(axisHelper);
+      
+      $scope.transformer.scene = new THREE.Object3D();
+      $scope.transformer.scene.add(model);
+      $scope.transformer.scene.add(box);
+      
+      updateSlicerScene();
+    }
+
+    //=== SLICER ===
+    $scope.slicer = {
+      scene: new THREE.Object3D(),
+      mode: null,
+      rotation: {
+        X: 0,
+        Y: 0,
+        Z: 0
+      },
+      size: 5,
+      maxSize: 40
+    };
+    $scope.$watch('slicer.rotation.X', updateSlicerScene);
+    $scope.$watch('slicer.rotation.Y', updateSlicerScene);
+    $scope.$watch('slicer.rotation.Z', updateSlicerScene);
+    $scope.$watch('slicer.size', updateSlicerScene);
+    function updateSlicerScene() {
+      $scope.slicer.scene = new THREE.Object3D();
+      
+      var size = $scope.slicer.size;
+      var opacity = Math.max(0.3 / size, 0.05);
+      var slicer = new THREE.Object3D();
+      var geometry = new THREE.PlaneGeometry(1, 1, 1, 1);
+      for(var index=0; index<=size; index++) {
+        var material = new THREE.MeshBasicMaterial({ color: 0x00ff00, side: THREE.FrontSide, transparent: true, opacity: opacity });
+        var plane = new THREE.Mesh(geometry, material);
+        plane.rotation.x = -Math.PI / 2;
+        plane.position.y = index / size;
+        slicer.add(plane);
+        
+        material = new THREE.MeshBasicMaterial({ color: 0xff0000, side: THREE.BackSide, transparent: true, opacity: opacity });
+        plane = new THREE.Mesh(geometry, material);
+        plane.rotation.x = -Math.PI / 2;
+        plane.position.y = index / size;
+        slicer.add(plane);
+      }
+      var eulerSlicer = new THREE.Euler(
+        $scope.slicer.rotation.X / 180 * Math.PI,
+        $scope.slicer.rotation.Y / 180 * Math.PI,
+        $scope.slicer.rotation.Z / 180 * Math.PI,
+        'YXZ'
+      );
+      slicer.position.set(0.5, 0, 0.5);
+      var slicerContainer = new THREE.Object3D();
+      var axisHelper = new THREE.AxisHelper(1); 
+      slicerContainer.add(slicer);
+      slicerContainer.add(axisHelper);
+      slicerContainer.rotation.set(eulerSlicer.x, eulerSlicer.y, eulerSlicer.z, eulerSlicer.order);
+      slicerContainer.__dirtyRotation = true;
+      
+      var eulerTransform = new THREE.Euler(
+        $scope.transformer.rotation.X / 180 * Math.PI,
+        $scope.transformer.rotation.Y / 180 * Math.PI,
+        $scope.transformer.rotation.Z / 180 * Math.PI,
+        'YXZ'
+      );
+      var quaternionSlicer = new THREE.Quaternion().setFromEuler(eulerSlicer);
+      var quaternionSlicerInverse = quaternionSlicer.clone().inverse();
+      var model = new THREE.Object3D();
+      model.rotation.set(eulerTransform.x, eulerTransform.y, eulerTransform.z, eulerTransform.order);
+      model.__dirtyRotation = true;
+      model.add(loader.model.clone());
+      
+      var innerModelContainer = new THREE.Object3D();
+      innerModelContainer.rotation.setFromQuaternion(quaternionSlicerInverse);
+      innerModelContainer.__dirtyRotation = true;
+      innerModelContainer.add(model);
+      
+      var bbox = new THREE.Box3().setFromObject(innerModelContainer);
+      var size = bbox.size();
+      slicerContainer.position.set(bbox.min.x, bbox.min.y, bbox.min.z);
+      slicerContainer.scale.set(size.x, size.y, size.z);
+      innerModelContainer.position.set(-bbox.min.x, -bbox.min.y, -bbox.min.z);
+      
+      var outerModelContainer = new THREE.Object3D();
+      outerModelContainer.rotation.setFromQuaternion(quaternionSlicer);
+      outerModelContainer.__dirtyRotation = true;
+      outerModelContainer.add(innerModelContainer);
+      
+      $scope.slicer.scene.add(outerModelContainer);
+      $scope.slicer.scene.add(slicerContainer);
+    }
     
+    //=== EXIT NAVIGATION ===
     $scope.back = function() {
       $location.path('/import');
     };

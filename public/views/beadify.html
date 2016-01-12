@@ -1,5 +1,5 @@
 <wizard on-finish="next()" hide-indicators="true" template="views/wizard.html"> 
-  <wz-step title="position">
+  <!--wz-step title="position">
     <div class="container-fluid fill">
       <div class="row fill">
         <div ng-include="'views/header.html'"></div>
@@ -9,12 +9,12 @@
             Position
           </h2>
           <p>
-            View:<br/>
+            View:
             <table class="table table-striped">
               <tr>
-                <td ng-class="{ info: selection.axis == null }">
-                  Move view 
-                  <button ng-click="selection.axis = null">
+                <td ng-class="{ info: transformer.mode == null }">
+                  Move camera 
+                  <button ng-click="transformer.mode = null">
                     <span class="glyphicon glyphicon-move"/>
                   </button>
                 </td>
@@ -22,21 +22,21 @@
             </table>
           </p>
           <p>
-            Rotation:
+            Model rotation:
             <table class="table table-striped">
               <tr>
                 <th>Axis</th>
                 <th>Angle (in &circ;)</th>
               </tr>
               <tr ng-repeat="axis in ['X', 'Y', 'Z']">
-                <td ng-class="{ info: selection.axis == axis }">{{axis}}</td>
-                <td ng-class="{ info: selection.axis == axis, 'form-inline': true }">
+                <td ng-class="{ info: transformer.mode == axis }">{{axis}}</td>
+                <td ng-class="{ info: transformer.mode == axis, 'form-inline': true }">
                   <form class="form-group">
-                    <button class="btn btn-default" title="Reset" ng-click="rotationModel[axis] = 0">
+                    <button class="btn btn-default" title="Reset" ng-click="transformer.rotation[axis] = 0">
                       <span class="glyphicon glyphicon-flash"/>
                     </button>
-                    <input class="form-control" type="number" min="-360" max="360" ng-model="rotationModel[axis]" ng-focus="selection.axis = axis"/>
-                    <button title="Edit in viewer" class="btn btn-default" ng-click="selection.axis = axis" ng-style="{ color: axis == 'X' ? 'red' : (axis == 'Y' ? 'green' : 'blue') }">
+                    <input class="form-control" type="number" min="-360" max="360" ng-model="transformer.rotation[axis]" ng-focus="transformer.mode = axis"/>
+                    <button title="Edit in viewer" class="btn btn-default" ng-click="transformer.mode = axis" ng-style="{ color: axis == 'X' ? 'red' : (axis == 'Y' ? 'green' : 'blue') }">
                       <span class="glyphicon glyphicon-arrow-right"/>
                     </button>
                   </form>
@@ -50,14 +50,14 @@
         
         <div class="col-sm-6 fill">
           <viewer 
-            object="scene.composition"
-            rotation="rotationModel"
-            mode="selection.axis"
+            object="transformer.scene"
+            rotation="transformer.rotation"
+            mode="transformer.mode"
           ></viewer>
         </div>
       </div>
     </div>
-  </wz-step>
+  </wz-step-->
   <wz-step title="slice">
     <div class="container-fluid fill">
       <div class="row fill">
@@ -65,13 +65,71 @@
         
         <div class="col-sm-6 fill">
           <h1>Slice</h1>
-          Size, Rotation
+          
+          <p>
+            View:
+            <table class="table table-striped">
+              <tr>
+                <td ng-class="{ info: slicer.mode == null }">
+                  Move camera 
+                  <button ng-click="slicer.mode = null">
+                    <span class="glyphicon glyphicon-move"/>
+                  </button>
+                </td>
+              </tr>
+            </table>
+          </p>
+          
+          <p>
+            Slicer rotation:
+            <table class="table table-striped">
+              <tr>
+                <th>Axis</th>
+                <th>Angle (in &circ;)</th>
+              </tr>
+              <tr ng-repeat="axis in ['X', 'Y', 'Z']">
+                <td ng-class="{ info: slicer.mode == axis }">{{axis}}</td>
+                <td ng-class="{ info: slicer.mode == axis, 'form-inline': true }">
+                  <form class="form-group">
+                    <button class="btn btn-default" title="Reset" ng-click="slicer.rotation[axis] = 0">
+                      <span class="glyphicon glyphicon-flash"/>
+                    </button>
+                    <input class="form-control" type="number" min="-360" max="360" ng-model="slicer.rotation[axis]" ng-focus="slicer.mode = axis"/>
+                    <button title="Edit in viewer" class="btn btn-default" ng-click="slicer.mode = axis" ng-style="{ color: axis == 'X' ? 'red' : (axis == 'Y' ? 'green' : 'blue') }">
+                      <span class="glyphicon glyphicon-arrow-right"/>
+                    </button>
+                  </form>
+                </td>
+              </tr>
+            </table>    
+          </p>
+          
+          <p>
+            Count: {{slicer.size}}
+            <table class="table table-striped">
+                <tr>
+                  <td>
+                    <slider 
+                      ng-model="slicer.size" 
+                      min="1" 
+                      step="1" 
+                      max="slicer.maxSize" 
+                    ></slider>
+                  </td>
+                </tr>
+            </table>
+          </p>
+          
           <button wz-previous class="btn btn-default">Back</button>
           <button wz-next class="btn btn-success">NEXT</button>
         </div>
         
         <div class="col-sm-6 fill">
-          
+          <viewer 
+            object="slicer.scene"
+            rotation="slicer.rotation"
+            mode="slicer.mode"
+          ></viewer>
         </div>
       </div>
     </div>
