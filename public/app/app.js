@@ -207,8 +207,8 @@ angular.module('beads3d', ['ui.bootstrap-slider', 'ngRoute', 'mgo-angular-wizard
       scene: new THREE.Object3D(),
       mode: null,
       rotation: {
-        X: 90,
-        Y: 180,
+        X: 0,
+        Y: 0,
         Z: 0
       },
     };
@@ -314,10 +314,11 @@ angular.module('beads3d', ['ui.bootstrap-slider', 'ngRoute', 'mgo-angular-wizard
       innerModelContainer.add(model);
       
       var bbox = new THREE.Box3().setFromObject(innerModelContainer);
+      innerModelContainer.position.set(-bbox.min.x, -bbox.min.y, -bbox.min.z);
+      bbox = new THREE.Box3().setFromObject(innerModelContainer);
       var size = bbox.size();
       slicerContainer.position.set(bbox.min.x, bbox.min.y, bbox.min.z);
       slicerContainer.scale.set(size.x, size.y, size.z);
-      innerModelContainer.position.set(-bbox.min.x, -bbox.min.y, -bbox.min.z);
       
       var outerModelContainer = new THREE.Object3D();
       outerModelContainer.rotation.setFromQuaternion(quaternionSlicer);
