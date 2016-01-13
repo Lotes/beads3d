@@ -265,7 +265,7 @@ angular.module('beads3d', ['ui.bootstrap-slider', 'ngRoute', 'mgo-angular-wizard
       $scope.slicer.scene = new THREE.Object3D();
       
       var size = $scope.slicer.size;
-      var opacity = Math.max(0.3 / size, 0.05);
+      var opacity = Math.max(0.2 + 0.1 / size, 0.2);
       var slicer = new THREE.Object3D();
       var geometry = new THREE.PlaneGeometry(1, 1, 1, 1);
       for(var index=0; index<=size; index++) {
@@ -317,8 +317,9 @@ angular.module('beads3d', ['ui.bootstrap-slider', 'ngRoute', 'mgo-angular-wizard
       innerModelContainer.position.set(-bbox.min.x, -bbox.min.y, -bbox.min.z);
       bbox = new THREE.Box3().setFromObject(innerModelContainer);
       var size = bbox.size();
+      var maxSize = Math.max(size.x, size.y, size.z);
       slicerContainer.position.set(bbox.min.x, bbox.min.y, bbox.min.z);
-      slicerContainer.scale.set(size.x, size.y, size.z);
+      slicerContainer.scale.set(maxSize, maxSize, maxSize);
       
       var outerModelContainer = new THREE.Object3D();
       outerModelContainer.rotation.setFromQuaternion(quaternionSlicer);
@@ -327,6 +328,21 @@ angular.module('beads3d', ['ui.bootstrap-slider', 'ngRoute', 'mgo-angular-wizard
       
       $scope.slicer.scene.add(outerModelContainer);
       $scope.slicer.scene.add(slicerContainer);
+      $scope.slicer.scene.add(new THREE.AxisHelper(1)); 
+      
+      updateParameters();
+    }
+    
+    //=== PARAMETERS ===
+    $scope.result = {
+      preTransform: null,
+      postTransform: null,
+      size: null,
+      model: null,
+      scene: new THREE.Object3D()
+    };
+    function updateParameters() {
+      
     }
     
     //=== EXIT NAVIGATION ===
@@ -430,11 +446,11 @@ angular.module('beads3d', ['ui.bootstrap-slider', 'ngRoute', 'mgo-angular-wizard
 
         //rotation handling
         scope.$watch('mode', function() {
-          controls.enabled = scope.mode === null;
+          controls.enabled = scope.mode === null || typeof(scope.mode) === 'undefined';
         });
         var startRotation, startMouseX, pressing = false;
         function onMouseDown(event) {
-          if(scope.mode === null)
+          if(scope.mode === null || typeof(scope.rotation) === 'undefined')
             return;
           event.preventDefault(); 
           startRotation = scope.rotation[scope.mode];
@@ -446,7 +462,7 @@ angular.module('beads3d', ['ui.bootstrap-slider', 'ngRoute', 'mgo-angular-wizard
           event.preventDefault(); 
         }
         function onMouseMove(event) {
-          if(!pressing)
+          if(!pressing || typeof(scope.rotation) === 'undefined')
             return;
           event.preventDefault(); 
           var delta = event.clientX - startMouseX;
