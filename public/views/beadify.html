@@ -1,6 +1,6 @@
 <wizard on-finish="next()" hide-indicators="true" template="views/wizard.html"> 
   <wz-step title="position">
-    <div class="container-fluid fill">
+    <div class="container-fixed fill">
       <div class="row fill">
         <div ng-include="'views/header.html'"></div>
         
@@ -59,7 +59,7 @@
     </div>
   </wz-step>
   <wz-step title="slice">
-    <div class="container-fluid fill">
+    <div class="container-fixed fill">
       <div class="row fill">
         <div ng-include="'views/header.html'"></div>
         
@@ -121,7 +121,7 @@
           </p>
           
           <button wz-previous class="btn btn-default">Back</button>
-          <button wz-next class="btn btn-success">NEXT</button>
+          <button wz-next class="btn btn-success" ng-click="result.compute()">NEXT</button>
         </div>
         
         <div class="col-sm-6 fill">
@@ -135,18 +135,21 @@
     </div>
   </wz-step>
   <wz-step title="confirm">
-    <div class="container-fluid fill">
+    <div class="container-fixed fill">
       <div class="row fill">
         <div ng-include="'views/header.html'"></div>
         
-        <div class="col-sm-6 fill">
-          <h1>Preview</h1>
-          <button wz-previous class="btn btn-default">Back</button>
-          <button wz-next class="btn btn-success">FINISH</button>
-        </div>
-        
-        <div class="col-sm-6 fill">
-          
+        <div class="col-sm-12 fill">
+          <h1>Preview
+            <button wz-previous class="btn btn-default">Back</button>
+            <button class="btn btn-info" wz-next ng-disabled="result.computing">
+              <span ng-hide="result.computing">FINISH</span>
+              <div class="progress" ng-hide="!result.computing" style="width: 50px; margin: 0;">
+                <div class="progress-bar progress-bar-info" role="progressbar" ng-style="{ width: result.progress+'%' }"></div>
+              </div>
+            </button>
+          </h1>
+          <viewer object="result.scene"></viewer>
         </div>
       </div>
     </div>

@@ -170,12 +170,13 @@ angular.module('beads3d', ['ui.bootstrap-slider', 'ngRoute', 'mgo-angular-wizard
     
     $scope.refresh();
   })
-  .controller('BeadifyController', function($scope, $location, $routeParams, Loader) {    
+  .controller('BeadifyController', function($scope, $location, $routeParams, Loader, Model) {    
+    var modelName = $routeParams.model;
     var loader = {
       model: new THREE.Object3D(),
       cube: new THREE.Object3D()
     };
-    Loader.loadOBJ('/uploads/'+$routeParams.model)
+    Loader.loadOBJ('/uploads/'+modelName)
       .then(function(obj) {
         loader.model = new THREE.Object3D();
         loader.model.add(obj);
@@ -330,20 +331,68 @@ angular.module('beads3d', ['ui.bootstrap-slider', 'ngRoute', 'mgo-angular-wizard
       $scope.slicer.scene.add(slicerContainer);
       $scope.slicer.scene.add(new THREE.AxisHelper(1)); 
       
-      updateParameters();
+      updateResult();
     }
     
     //=== PARAMETERS ===
     $scope.result = {
+      progress: 0,
+      computing: false,
+      compute: function() {
+        $scope.result.computing = true;
+        Model.beadify(modelName, $scope.result.size);
+      },
       preTransform: null,
       postTransform: null,
+      error: null,
       size: null,
       model: null,
       scene: new THREE.Object3D()
     };
-    function updateParameters() {
-      
+    function updateResult() {
+      $scope.result.size = $scope.slicer.size;
     }
+    function onProgress(progress) { $scope.result.progress = progress; $scope.$apply(); }
+    function onError(error) { $scope.result.error = error; $scope.$apply(); }
+    function onResult(result) { 
+      $scope.result.model = result;
+      $scope.result.computing = false;
+      updateResultScene();
+      $scope.$apply();
+    }
+    function updateResultScene() {
+      $scope.result.scene = new THREE.Object3D();
+      var material = new THREE.MeshLambertMaterial({
+        color: 0xffffff
+      });
+      var container = new THREE.Object3D();
+      var model = $scope.result.model;
+      for(var y=0; y<model.length; y++) {
+        var layer = model[y];
+        for(var z=0; z<layer.length; z++) {
+          var row = layer[z];
+          for(var x=0; x<row.length; x++) {
+            if(row[x] === 'X') {
+              var geometry = new THREE.BoxGeometry(1, 1, 1);
+              var cube = new THREE.Mesh(geometry, material);
+              cube.position.set(x, y, z);
+              container.add(cube);     
+            }
+          } 
+        } 
+      }
+      var size = model.length;
+      container.scale.set(1/size, 1/size, 1/size);
+      $scope.result.scene.add(container);
+    }
+    socket.on('progress', onProgress);
+    socket.on('error', onError);
+    socket.on('result', onResult);
+    $scope.$on('$destroy', function() {
+      socket.off('progress', onProgress);
+      socket.off('error', onError);
+      socket.off('result', onResult);
+    });
     
     //=== EXIT NAVIGATION ===
     $scope.back = function() {
