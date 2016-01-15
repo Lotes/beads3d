@@ -256,7 +256,7 @@ angular.module('beads3d', ['ui.bootstrap-slider', 'ngRoute', 'mgo-angular-wizard
         Z: 0
       },
       size: 5,
-      maxSize: 40
+      maxSize: 100
     };
     $scope.$watch('slicer.rotation.X', updateSlicerScene);
     $scope.$watch('slicer.rotation.Y', updateSlicerScene);
