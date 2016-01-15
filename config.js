@@ -6,6 +6,6 @@ module.exports = {
   MODELS_PATH: path.join(__dirname, 'models'),
   MODEL_NAME_LENGTH: 20,
   MODELS_MAX_SPACE_PER_SESSION: 10*1024*1024,
-  BEADIFIER_PATH: path.join(__dirname, 'beadifier'),
-  BEADIFIER_EXECUTABLE_PATH: path.join(__dirname, 'beadifier', 'beadify')
+  BEADIFIER_PATH: path.join(__dirname, 'voxelify'),
+  BEADIFIER_EXECUTABLE_PATH: path.join(__dirname, 'voxelify', 'voxelify')
 };

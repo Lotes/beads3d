@@ -1,6 +1,7 @@
 #ifndef OBJECT_H
 #define OBJECT_H
 
+#include "boundingbox.h"
 #include <iostream>
 #include <cstring>
 #include <string>
@@ -12,6 +13,9 @@
 #include <sstream>
 #include <math.h>
 #include <ctime>
+#include "face.h"
+
+using namespace std;
 
 class Object {
 public:
@@ -51,6 +55,16 @@ public:
 			box.add(*it);
 		return box;
 	}
+  vector<Face> extractFaces() {
+    vector<Face> result;
+    for(auto faceIndices: faces)
+      result.push_back(Face(
+        vertices[faceIndices.x], 
+        vertices[faceIndices.y], 
+        vertices[faceIndices.z]
+      ));
+    return result;
+  }
 	void normalize() {
 		BoundingBox box = bbox();
 		Vector3<float> size = box.size();
@@ -60,16 +74,6 @@ public:
 			it->y = (it->y - box.min.y) * scale;
 			it->z = (it->z - box.min.z) * scale;
 		}
-	}
-	BSPTree toTree() {
-		vector<Triangle> triangles;
-		for(vector<Vector3<int>>::iterator it=faces.begin(); it!=faces.end(); it++)
-			triangles.push_back(Triangle(
-				vertices[it->x],
-				vertices[it->y],
-				vertices[it->z]
-			));
-		return BSPTree(triangles);
 	}
 	void translate(Vector3<float> translation) {
 		for(vector<Vector3<float>>::iterator it=vertices.begin(); it!=vertices.end(); it++) {

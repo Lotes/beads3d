@@ -1,6 +1,10 @@
 #ifndef VECTOR_H
 #define VECTOR_H
 
+#include <string>
+
+using namespace std;
+
 template<class T>
 struct Vector3 {
 public:
@@ -28,6 +32,9 @@ public:
 	float length() const {
 		return (float)sqrt(x*x + y*y + z*z);
 	}
+  float distanceTo(const Vector3<T>& other) const {
+    return subtract(other).length();
+  }
 	Vector3<float> normalize() const {
 		float len = length();
 		if(len == 0) {
