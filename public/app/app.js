@@ -75,7 +75,7 @@ angular.module('beads3d', ['ui.bootstrap-slider', 'ngRoute', 'mgo-angular-wizard
     this.loadOBJ = function(url) {
       var deferred = $q.defer();
       new THREE.OBJLoader().load(url, function(obj) {
-        deferred.resolve(obj.children[0]);
+        deferred.resolve(obj);
       }, function(progress) {
         //nothing
       }, function(err) {

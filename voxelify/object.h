@@ -7,6 +7,7 @@
 #include <string>
 #include <boost/regex.hpp>
 #include <boost/algorithm/string.hpp>
+#include <boost/algorithm/string/trim.hpp>
 #include <fstream>
 #include <algorithm>
 #include <vector>
@@ -33,8 +34,8 @@ public:
 		string line;
     string material;
 		while (getline(infile, line)) {
-      boost::regex useMaterialPattern("[^#]*usemtl +(.*)"); 
-      boost::regex materialLibPattern("[^#]*mtllib +(.*)"); 
+      boost::regex useMaterialPattern("[^#]*usemtl +([^#]*).*"); 
+      boost::regex materialLibPattern("[^#]*mtllib +([^#]*).*"); 
 			boost::regex vertexPattern("[^#]*v +([\\d|\\.|\\+|\\-|e|E]+) +([\\d|\\.|\\+|\\-|e|E]+) +([\\d|\\.|\\+|\\-|e|E]+).*");
 			boost::regex texturePattern("[^#]*vt +([\\d|\\.|\\+|\\-|e|E]+) +([\\d|\\.|\\+|\\-|e|E]+).*");
 			boost::regex facePattern1("[^#]*f +(\\d+) +(\\d+) +(\\d+).*");
@@ -46,7 +47,9 @@ public:
 				addPosition(match[1].str(), match[2].str(), match[3].str());
 			}
       else if(boost::regex_match(line, match, useMaterialPattern)) {
-        material = match[1].str();
+        string str = match[1].str();
+        boost::algorithm::trim(str);
+        material = str;
       }
       else if(boost::regex_match(line, match, materialLibPattern)) {
         string str = match[1].str();
@@ -68,6 +71,8 @@ public:
 				addFace(material.c_str(), match[1].str(), match[2].str(), match[3].str());
 			}
 		}
+    for(auto& lib: _libraries)
+      boost::algorithm::trim(lib);
 	}
 	BoundingBox bbox() {
 		BoundingBox box;
