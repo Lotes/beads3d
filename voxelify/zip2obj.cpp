@@ -24,7 +24,6 @@ using namespace boost::algorithm;
 
 void unzip(struct zip_file* file, struct zip_stat& stat, const char* fileName) {
   //read out
-  cout << "unzip...." << stat.size << " bytes to " << fileName << endl;
   char* contents = new char[stat.size];
   zip_fread(file, contents, stat.size);
 
