@@ -7,9 +7,11 @@ It will also be possible to draw 2D images.
 
 TODO
 ----
--web GUI
--editor
--PDF export
+ * web GUI
+ * add color scanning from 3D object
+ * add picture to bead image conversion
+ * editor
+ * PDF export
 
 Models folder
 -------------
@@ -20,6 +22,7 @@ And a beadified version of size 12 will be stored under "XYZ/12.json".
 
 Example file tree for two models each with two beadified versions.
 
+```
 models
 |_ pikachu
 |  |_ model.obj
@@ -29,3 +32,4 @@ models
    |_ model.obj
    |_ 7.json
    |_ 51.json
+```
