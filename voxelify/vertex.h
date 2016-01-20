@@ -1,6 +1,8 @@
 #ifndef VERTEX_H
 #define VERTEX_H
 
+#include <math.h>
+
 class Vertex {
 public:
   float x;
@@ -21,6 +23,13 @@ public:
       u * invFactor + other.u * factor,
       v * invFactor + other.v * factor
     );
+  }
+  
+  float distanceTo(const Vertex& other) const {
+    float dx = x - other.x;
+    float dy = y - other.y;
+    float dz = z - other.z;
+    return (float)sqrt(dx*dx + dy*dy + dz*dz);
   }
 };
 

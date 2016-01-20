@@ -16,7 +16,7 @@
  
 using namespace std;
 
-void voxelifyVertex(const Vector3<float>& vertex, Voxels& result) {
+void voxelifyVertex(const Vertex& vertex, Voxels& result) {
   int size = result.size();
   Vector3<int> coords(
     (int) (vertex.x * size),
