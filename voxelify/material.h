@@ -16,7 +16,7 @@ using namespace boost::algorithm;
 
 class Material {
 public:
-  Material(const char* fileName, bool convert2Png = true) {
+  Material(const char* fileName, bool convert2Png = true): _fileName(fileName) {
     ifstream infile(fileName);
     string line;
     string currentMaterial;
@@ -46,14 +46,17 @@ public:
       _lines.push_back(values);
     }
   }
-  vector<string> getMaterialNames() {
+  vector<string> getMaterialNames() const {
     vector<string> result;
     for(auto it: _textures)
       result.push_back(it.first);
     return result;
   }
-  std::map<string,string> getTextures(const string& materialName) {
-    return _textures[materialName];
+  const char* fileName() const {
+    return _fileName.c_str();
+  }
+  std::map<string,string> getTextures(const string& materialName) const {
+    return _textures.at(materialName);
   }
   void save(const char* fileName) const {
     ofstream out(fileName);
@@ -63,6 +66,7 @@ public:
     out.close();
   }
 private:
+  string _fileName;
   vector<vector<string>> _lines;
   map<string,map<string,string>> _textures;
 };
