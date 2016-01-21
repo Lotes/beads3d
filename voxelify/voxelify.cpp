@@ -31,7 +31,6 @@ void voxelifyVertex(FIBITMAP* image, const Vertex& vertex, Voxels& result) {
     RGBQUAD color;
     int width = FreeImage_GetWidth(image);
     int height = FreeImage_GetHeight(image);
-    cout << vertex.u << "," << vertex.v << endl;
     int x = (int)((width-1) * vertex.u);
     int y = (int)((height-1) * vertex.v);
     FreeImage_GetPixelColor(image, x, y, &color);  
