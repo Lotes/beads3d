@@ -1,15 +1,132 @@
 var Q = require('q');
 var database = require('../database/index');
-var Model = database.Model;
+var Upload = database.Upload;
 var randomString = require('./randomString');
 var fs = require('fs');
 var fse = require('fs-extra');
 var Config = require('../config');
 var process = require('child_process');
 var path = require('path');
+var _ = require('lodash');
+var lock = require('./lock');
 
-//session id -> process
-var beadifiers = {};
+function clearSessionsDirectory() {
+  var deferred = Q.defer();
+  fse.emptyDir(Config.SESSIONS_PATH, function(err) {
+    if(err) deferred.reject(err);
+    else deferred.resolve();
+  });
+  return deferred.promise;
+}
+
+function clearTempDirectory() {
+  var deferred = Q.defer();
+  fse.emptyDir(Config.TEMP_PATH, function(err) {
+    if(err) deferred.reject(err);
+    else deferred.resolve();
+  });
+  return deferred.promise;
+}
+
+function clearDatabase() {
+  var deferred = Q.defer();
+  Upload.remove({}, function(err) {
+    if(err) deferred.reject(err);
+    else deferred.resolve();
+  });
+  return deferred.promise;
+}
+
+function unpack(sourceFileName, destinationFolder) {
+  var deferred = Q.defer();
+  var command = Config.UNPACKER_EXECUTABLE_PATH + '"' + sourceFileName + '" "'+destinationFolder+'"';
+  var zipProcess = process.exec(command, {cwd: Config.VOXELIFY_PATH });
+  //handle errors
+  var errorMessage = '';
+  zipProcess.stdout.on('data', function(data) {
+    errorMessage += data;
+  });
+  //handle exit
+  zipProcess.on('exit', function(code) {
+    if(code === 0) return deferred.resolve();
+    deferred.reject(new Error('Unpack error: '+errorMessage));
+  });
+  return deferred.promise;
+}
+
+var tempZipFileIndex = 0;
+/**
+ * Uploads a file or ZIP archive to a session.
+ * If it is a ZIP file it will be unpacked. All OBJ, MTL, TGA and PNG files will be copied.
+ * @throws an exception, otherwise (file not accepted)
+ * @throws an exception, if session space was exceeded.
+ */
+function uploadBuffer(session, name, data) {
+  var deferred = Q.defer();
+  var lowerCaseName = _.lowerCase(name);
+  var dotIndex = name.lastIndexOf('.');
+  var folderName = dotIndex > -1 ? name.substr(0, dotIndex) : name;
+  folderName = folderName.replace(/[ \\\/]/g, '');
+  if(/\.(zip)$/.test(lowerCase)) {
+    //it's a zip file!
+    tempZipFileIndex++;
+    var tempZipFilePath = path.join(Config.TEMP_PATH, tempZipFileIndex+'.zip');
+    var folderPath = path.join(Config.SESSION_PATH, session.cookie, folderName);
+    fse.outputFile(tempZipFilePath, data, function(err) {
+      if(err) return deferred.resolve(err);
+      function removeZip() { fse.remove(tempZipFilePath); }
+      unpack(tempZipFilePath, folderPath)
+        .then(
+          function() { 
+            removeZip();
+            var sumSize = 0;
+            fse.walk(folderPath)
+              .on('data', function(item) { sumSize += item.stats.size; })
+              .on('error', function(err3) { deferred.reject(err3); })
+              .on('end', function() {
+                
+              });
+          }, function(err2) { 
+            removeZip();
+            deferred.reject(err2);
+          },
+        );
+    });
+  } else {
+    //it's not accepted
+    deferred.reject(new Error('Unacceptable file type!'));
+  }
+  return deferred.promise;
+}
+
+/**
+ * Same as uploadBuffer(...). A local file will be read out and passed.
+ */
+function uploadLocalFile(session, fileName) {
+  var deferred = Q.defer();
+  fse.readFile(fileName, function(err, data) {
+    if(err)
+      return deferred.reject(err);
+    var name = path.basename(fileName);
+    uploadBuffer(session, name, data)
+      .then(
+        function(result) { deferred.resolve(result); }, 
+        function(ex) { deferred.reject(ex); }
+      );
+  });
+  return deferred.promise;
+}
+
+module.exports = {
+  clearTempDirectory: clearTempDirectory,
+  clearSessionsDirectory: clearSessionsDirectory,
+  clearDatabase: clearDatabase,
+  
+  uploadLocalFile: uploadLocalFile,
+  uploadBuffer: uploadBuffer
+};
+
+//---------------------------------------------------------
 
 /**
  * Creates a model, returns it on success, throws error 
@@ -26,20 +143,20 @@ function create(displayName, buffer, session) {
     fse.mkdirs(directoryPath, function(err) {
       if(err) deferred.reject(err);
       else {
-        var modelPath = directoryPath+'/model.obj';
+        var zipPath = directoryPath+'.zip';
         fs.writeFile(modelPath, buffer, function (err) {
           if(err) deferred.reject(err);
           else {
-            var model = new Model({
+            /*var upload = new Model({
               name: name,
               displayName: displayName,
               session: session,
               size: buffer.length
             });
-            model.save(function(err) {
+            upload.save(function(err) {
               if(err) deferred.reject(err);
-              else deferred.resolve(model);
-            });
+              else deferred.resolve(upload);
+            });*/
           }
         });
       }
@@ -116,10 +233,9 @@ function query(options) {
 }
 
 /**
- * Beadifies a model with a maximal resolution of <size>.
+ * Voxelifies a model with a maximal resolution of <size>.
  * The returned promise notifies about progress.
  * Returns a voxel JSON object. Throws error on format exceptions.
- * Only one beadifier per session allowed! Existing computations will be killed.
  */
 function beadify(session, name, size) {
   var deferred = Q.defer();
@@ -185,38 +301,3 @@ function beadify(session, name, size) {
   }, function(err) { deferred.reject(err); });    
   return deferred.promise;
 }
-
-function clearDirectory() {
-  var deferred = Q.defer();
-  fse.emptyDir(Config.MODELS_PATH, function(err) {
-    if(err) deferred.reject(err);
-    else deferred.resolve();
-  });
-  return deferred.promise;
-}
-
-function clearDatabase() {
-  var deferred = Q.defer();
-  Model.remove({}, function(err) {
-    if(err) deferred.reject(err);
-    else deferred.resolve();
-  });
-  return deferred.promise;
-}
-
-function clear() {
-  return Q.all([
-    clearDirectory(),
-    clearDatabase()
-  ]);
-}
-
-module.exports = {
-  beadify: beadify,
-  query: query,
-  remove: remove,
-  getUsedSpace: getUsedSpace,
-  data: data,
-  create: create,
-  clear: clear
-};

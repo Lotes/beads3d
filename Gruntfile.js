@@ -14,24 +14,30 @@ module.exports = function(grunt) {
             }
         }
     },
-	express: {
-		server: {
-			options: {
-				script: 'server.js'
-			}
-		}
-	}
-    /*watch: {
-      all: {
-        files: ['<%= jshint.all %>'],
-        tasks: ['jshint', 'nodeunit'],
-      },
-    }*/
+    express: {
+        server: {
+            options: {
+                script: 'server.js'
+            }
+        }
+    },
+    mochaTest: {
+      server: {
+        options: {
+          reporter: 'nyan',
+          quiet: false,
+          clearRequireCache: false
+        },
+        src: ['tests/**/*.spec.js']
+      }
+    }
   });
 
   grunt.loadNpmTasks('grunt-contrib-watch');
   grunt.loadNpmTasks('grunt-php');
   grunt.loadNpmTasks('grunt-express');
+  grunt.loadNpmTasks('grunt-mocha-test');
   
   grunt.registerTask('default', ['express']);
+  grunt.registerTask('test', ['mochaTest:server']);
 };

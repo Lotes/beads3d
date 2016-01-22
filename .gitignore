@@ -10,7 +10,7 @@
 /beadifier/cygstdc++-6.dll
 /beadifier/cygwin1.dll
 /public/bower_components
-/models
+/sessions
 /development/models/pikachu/large.obj
 /voxelify/cygboost_regex-1_58.dll
 /voxelify/cyggcc_s-seh-1.dll
@@ -29,3 +29,9 @@
 /voxelify/model.zip
 /voxelify/model
 /voxelify/zip2obj.exe
+/voxelify/bisaflor.json
+/voxelify/cygboost_filesystem-1_58.dll
+/voxelify/cygboost_system-1_58.dll
+/voxelify/cygz.dll
+/voxelify/cygzip-2.dll
+/temp

@@ -25,11 +25,10 @@ var ImageSchema = new Schema({
   session: { type: Schema.ObjectId, ref: 'sessions' }
 });
 
-var ModelSchema = new Schema({
-  displayName: String,
-  name: { type: String, index: { unique: true } }, //==folder name in models directory
-  uploadedAt: { type: Date, 'default': Date.now },
+var UploadSchema = new Schema({
   session: { type: Schema.ObjectId, ref: 'sessions' },
+  name: { type: String }, //==folder "sessions/{SESSIONID}/{name}"
+  uploadedAt: { type: Date, 'default': Date.now },
   size: Number
 });
 
@@ -49,7 +48,7 @@ var ViewSchema = new Schema({
 module.exports = {
   Session: connection.model('sessions', SessionSchema),
   Image: connection.model('images', ImageSchema),
-  Model: connection.model('models', ModelSchema),
+  Upload: connection.model('uploads', UploadSchema),
   Star: connection.model('stars', StarSchema),
   View: connection.model('views', ViewSchema)
 };
