@@ -7,7 +7,6 @@ module.exports = {
   DEVELOPMENT_DATA_PATH: path.join(__dirname, 'development'),
   SESSIONS_PATH: path.join(__dirname, 'sessions'),
   TEMP_PATH: path.join(__dirname, 'temp'),
-  UPLOAD_NAME_LENGTH: 5,
   MAX_SPACE_PER_SESSION: 10*1024*1024,
   VOXELIFY_PATH: VOXELIFY_PATH,
   VOXELIFY_EXECUTABLE_PATH: path.join(VOXELIFY_PATH, 'voxelify'),

@@ -1,3 +1,4 @@
+//globals
 var Q = require('q');
 var database = require('../database/index');
 var Upload = database.Upload;
@@ -8,7 +9,61 @@ var Config = require('../config');
 var process = require('child_process');
 var path = require('path');
 var _ = require('lodash');
-var lock = require('./lock');
+var locks = require('locks');
+
+//state variables
+var uploadMutexs = {};
+
+/**
+ * Locks an upload for a session. Call done() if finished.
+ * Example:
+ *   lockSessionUploads(session, function(done) {
+ *     work();
+ *     done();
+ *   });
+ */
+function lockSessionUpload(session, action) {
+  var name = session.cookie;
+  if(!(name in uploadMutexs))
+    uploadMutexs[name] = locks.createMutex();
+  var mutex = uploadMutexs[name];
+  mutex.lock(function() {
+    action(function() {
+      mutex.unlock();
+    });
+  });
+}
+
+/**
+ * Create a folder for a new upload.
+ */
+function createUploadFolder(session, initialFolderName, index) {
+  var deferred = Q.defer();
+  var folderName = path.join(Config.SESSIONS_PATH, session.cookie, initialFolderName);
+  if(typeof(index) === 'number')
+    folderName += ' ('+index+')';
+  fs.stat(folderName, function(err, stats) {
+    if(err) {
+      if(err.errno === 34) {
+        //not found -> create
+        fse.mkdirs(folderName, function(err3) {
+          if(err3) return deferred.reject(err3);
+          deferred.resolve(folderName);
+        });
+      } else 
+        deferred.reject(err);
+    } else {
+      //exists already -> rename
+      var newIndex = index ? index+1 : 2;
+      createUploadFolder(session, initialFolderName, newIndex)
+        .then(
+          function(result) { deferred.resolve(result); },
+          function(err2) { deferred.reject(err2); }
+        );
+    }
+  });
+  return deferred.promise;
+}
 
 function clearSessionsDirectory() {
   var deferred = Q.defer();
@@ -22,15 +77,6 @@ function clearSessionsDirectory() {
 function clearTempDirectory() {
   var deferred = Q.defer();
   fse.emptyDir(Config.TEMP_PATH, function(err) {
-    if(err) deferred.reject(err);
-    else deferred.resolve();
-  });
-  return deferred.promise;
-}
-
-function clearDatabase() {
-  var deferred = Q.defer();
-  Upload.remove({}, function(err) {
     if(err) deferred.reject(err);
     else deferred.resolve();
   });
@@ -60,41 +106,56 @@ var tempZipFileIndex = 0;
  * If it is a ZIP file it will be unpacked. All OBJ, MTL, TGA and PNG files will be copied.
  * @throws an exception, otherwise (file not accepted)
  * @throws an exception, if session space was exceeded.
+ * @returns upload folder name on success
  */
 function uploadBuffer(session, name, data) {
   var deferred = Q.defer();
-  var lowerCaseName = _.lowerCase(name);
+  var lowerCaseName = _.toLower(name);
   var dotIndex = name.lastIndexOf('.');
+  var sessionPath = path.join(Config.SESSIONS_PATH, session.cookie);
   var folderName = dotIndex > -1 ? name.substr(0, dotIndex) : name;
   folderName = folderName.replace(/[ \\\/]/g, '');
-  if(/\.(zip)$/.test(lowerCase)) {
+  if(/\.(zip)$/.test(lowerCaseName)) {
     //it's a zip file!
-    tempZipFileIndex++;
-    var tempZipFilePath = path.join(Config.TEMP_PATH, tempZipFileIndex+'.zip');
-    var folderPath = path.join(Config.SESSION_PATH, session.cookie, folderName);
-    fse.outputFile(tempZipFilePath, data, function(err) {
-      if(err) return deferred.resolve(err);
-      function removeZip() { fse.remove(tempZipFilePath); }
-      unpack(tempZipFilePath, folderPath)
-        .then(
-          function() { 
-            removeZip();
-            var sumSize = 0;
-            fse.walk(folderPath)
-              .on('data', function(item) { sumSize += item.stats.size; })
-              .on('error', function(err3) { deferred.reject(err3); })
-              .on('end', function() {
-                
-              });
-          }, function(err2) { 
-            removeZip();
-            deferred.reject(err2);
-          },
-        );
+    //1. lock the session folder
+    lockSessionUpload(session, function(done) {
+      deferred.promise.finally(done); //automated unlocking session mutex
+      tempZipFileIndex++;
+      var tempZipFilePath = path.join(Config.TEMP_PATH, tempZipFileIndex+'.zip');
+      //2. create folder
+      createUploadFolder(session, folderName)
+        .then(function(folderPath) {
+          //3. write zip file
+          fse.outputFile(tempZipFilePath, data, function(err) {
+            if(err) return deferred.resolve(err);
+            deferred.promise.finally(function() { fse.remove(tempZipFilePath); }); //automated removing of zip file
+            deferred.promise.fail(function() { fse.remove(folderPath); }); //automated removing of upload folder when failing
+            //4. unpack zip file
+            unpack(tempZipFilePath, folderPath)
+              .then(
+                function() {
+                  //5. check session space limit
+                  var sumSize = 0;
+                  fse.walk(sessionPath)
+                    .on('data', function(item) { sumSize += item.stats.size; })
+                    .on('error', function(err3) { deferred.reject(err3); })
+                    .on('end', function() {
+                      if(sumSize > Config.MAX_SPACE_PER_SESSION)
+                        return deferred.reject(new Error('Session space exceeded! Upload will be deleted. Please free space by deleting other uploads.'));
+                      deferred.resolve(path.basename(folderPath));
+                    });
+                }, function(err2) {
+                  deferred.reject(err2);
+                }
+              );
+          });
+        }, function(err) {
+          deferred.reject(err);
+        });
     });
   } else {
     //it's not accepted
-    deferred.reject(new Error('Unacceptable file type!'));
+    deferred.reject(new Error('Unacceptable file type ('+name+')!'));
   }
   return deferred.promise;
 }
@@ -120,184 +181,7 @@ function uploadLocalFile(session, fileName) {
 module.exports = {
   clearTempDirectory: clearTempDirectory,
   clearSessionsDirectory: clearSessionsDirectory,
-  clearDatabase: clearDatabase,
   
   uploadLocalFile: uploadLocalFile,
   uploadBuffer: uploadBuffer
 };
-
-//---------------------------------------------------------
-
-/**
- * Creates a model, returns it on success, throws error 
- * when session space was exceeded.
- * TODO ensure unique key nicely
- */
-function create(displayName, buffer, session) {
-  var deferred = Q.defer();
-  getUsedSpace(session).then(function(space) {
-    if(space + buffer.length > Config.MODELS_MAX_SPACE_PER_SESSION)
-      return deferred.reject(new Error('File is too big! Maximum space is '+Config.MODELS_MAX_SPACE_PER_SESSION+' bytes.'));
-    var name = randomString(Config.MODEL_NAME_LENGTH);
-    var directoryPath = path.join(Config.MODELS_PATH, name);
-    fse.mkdirs(directoryPath, function(err) {
-      if(err) deferred.reject(err);
-      else {
-        var zipPath = directoryPath+'.zip';
-        fs.writeFile(modelPath, buffer, function (err) {
-          if(err) deferred.reject(err);
-          else {
-            /*var upload = new Model({
-              name: name,
-              displayName: displayName,
-              session: session,
-              size: buffer.length
-            });
-            upload.save(function(err) {
-              if(err) deferred.reject(err);
-              else deferred.resolve(upload);
-            });*/
-          }
-        });
-      }
-    });
-  }, function(err) { deferred.reject(err); });
-  return deferred.promise;
-}
-
-function data(session, name) {  
-  var deferred = Q.defer();
-  query({
-    session: session,
-    name: name
-  }).then(function(models) {
-    if(models.length === 0) 
-      return deferred.reject(new Error('No model "'+name+'" found!'));
-    var objPath = Config.MODELS_PATH+'/'+name+'/model.obj';
-    fs.readFile(objPath, 'utf8', function(err, data) {
-      if(err) deferred.reject(err);
-      else deferred.resolve(data);
-    });
-  }, function(err) { deferred.reject(err); });
-  return deferred.promise;
-}
-
-function getUsedSpace(session) {
-  var deferred = Q.defer();
-  query({
-    session: session
-  }).then(function(models) {
-    var sizeSum = 0;
-    models.forEach(function(model) { sizeSum += model.size; });
-    deferred.resolve(sizeSum);
-  }, function(err) { deferred.reject(err); });
-  return deferred.promise;
-}
-
-/**
- * Removes a model for the given session.
- */
-function remove(session, name) {
-  var deferred = Q.defer();
-  Model.findOne({
-    session: session,
-    name: name
-  }, function(err, model) {
-    if(err) deferred.reject(err);
-    else if(model === null) deferred.reject(new Error('Model not found!'));
-    else model.remove(function(err) {
-      if(err) deferred.reject(err);
-      else {
-        var path = Config.MODELS_PATH + '/' + name;
-        fse.remove(path, function(err) {
-          if(err) deferred.reject(err);
-          else deferred.resolve();    
-        });
-      }
-    });
-  });
-  return deferred.promise;
-}
-
-/**
- * Queries the database for models with the provided parameters.
- * Returns a list of models.
- */
-function query(options) {
-  var deferred = Q.defer();
-  Model.find(options).exec(function(err, models) {
-    if(err) deferred.reject(err);
-    else deferred.resolve(models);
-  });
-  return deferred.promise;
-}
-
-/**
- * Voxelifies a model with a maximal resolution of <size>.
- * The returned promise notifies about progress.
- * Returns a voxel JSON object. Throws error on format exceptions.
- */
-function beadify(session, name, size) {
-  var deferred = Q.defer();
-  query({
-    session: session,
-    name: name
-  }).then(function(models) {
-    if(models.length === 0)
-      deferred.reject(new Error('No model "'+name+'" found!'));
-    else {
-      var resultPath = Config.MODELS_PATH+'/'+name+'/'+size+'.json';
-      fs.readFile(resultPath, 'utf8', function(err, data) {
-        if(!err)
-          try {
-            return deferred.resolve(JSON.parse(data));  
-          } catch(ex) {}
-        //no result file found, compute one
-        if(session.cookie in beadifiers) {
-          //kill existing process
-          var beadifier = beadifiers[session.cookie];
-          beadifier.kill();
-          delete beadifiers[session.cookie];
-        }
-        //start new process
-        var objPath = Config.MODELS_PATH+'/'+name+'/model.obj';
-        var command = Config.BEADIFIER_EXECUTABLE_PATH+' "'+objPath+'" '+size+' "'+resultPath+'"';            
-        var beadify = process.exec(command, {cwd: Config.BEADIFIER_PATH });
-        beadifiers[session.cookie] = beadify;
-        //parse std output
-        var text = '';
-        var pattern = /(\d+)\/(\d+)/;
-        function parseText() {
-          var match = pattern.exec(text);
-          if(match != null) {
-            var progress = 100 * parseInt(match[1], 10) / parseInt(match[2], 10);
-            deferred.notify(progress);
-            text = '';
-          }
-        }
-        beadify.stdout.on('data', function(data) {
-          var lines = data.split('\n');
-          lines.forEach(function(line) {
-            text += line;
-            parseText();
-          });
-        });
-        beadify.on('exit', function(code) {
-          delete beadifiers[session.cookie];
-          if(code === 0) {
-            fs.readFile(resultPath, 'utf8', function(err, data) {
-              if(!err)
-                try {
-                  deferred.resolve(JSON.parse(data));  
-                } catch(ex) { deferred.reject(ex); }
-              else
-                deferred.reject(err);
-            });
-          } else
-            deferred.reject(new Error('Beadifier exited with code '+code+'.'));
-        });
-      });
-    }
-  }, function(err) { deferred.reject(err); });    
-  return deferred.promise;
-}
