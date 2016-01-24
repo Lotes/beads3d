@@ -44,7 +44,7 @@ function createUploadFolder(session, initialFolderName, index) {
     folderName += ' ('+index+')';
   fs.stat(folderName, function(err, stats) {
     if(err) {
-      if(err.errno === 34) {
+      if(err.code === 'ENOENT') {
         //not found -> create
         fse.mkdirs(folderName, function(err3) {
           if(err3) return deferred.reject(err3);
@@ -85,7 +85,7 @@ function clearTempDirectory() {
 
 function unpack(sourceFileName, destinationFolder) {
   var deferred = Q.defer();
-  var command = Config.UNPACKER_EXECUTABLE_PATH + '"' + sourceFileName + '" "'+destinationFolder+'"';
+  var command = Config.UNPACKER_EXECUTABLE_PATH + ' "' + sourceFileName + '" "'+destinationFolder+'"';
   var zipProcess = process.exec(command, {cwd: Config.VOXELIFY_PATH });
   //handle errors
   var errorMessage = '';
@@ -95,7 +95,7 @@ function unpack(sourceFileName, destinationFolder) {
   //handle exit
   zipProcess.on('exit', function(code) {
     if(code === 0) return deferred.resolve();
-    deferred.reject(new Error('Unpack error: '+errorMessage));
+    deferred.reject(new Error('Unpack error while ['+command+']: '+errorMessage));
   });
   return deferred.promise;
 }

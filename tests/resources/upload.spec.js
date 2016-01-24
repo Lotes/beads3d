@@ -5,7 +5,7 @@ var Config = require('../../config');
 var Session = require('../../resources/session');
 var should = require('should');
 
-describe('resources/upload', function() {
+describe('Upload resource', function() {
   var venusaurModelPath = path.join(Config.DEVELOPMENT_DATA_PATH, 'models', 'venusaur.zip');
   var session = null;
   
@@ -32,9 +32,32 @@ describe('resources/upload', function() {
   
   it('should upload local file', function(done) {
     Upload.uploadLocalFile(session, venusaurModelPath)
-      .then(done)
-      .fail(function(err) {
-        done(err);
-      });
+      .then(function(result) { done(); })
+      .fail(done);
+  });
+  
+  it('should upload same file with different name', function(done) {
+    Q.all([
+      Upload.uploadLocalFile(session, venusaurModelPath),
+      Upload.uploadLocalFile(session, venusaurModelPath)
+    ]).then(function(results) {
+      try {
+        results[0].should.not.equal(results[1]);
+        done();
+      } catch(err) { done(err); }
+    })
+    .fail(done);
+  });
+  
+  it('should fail uploading non-existing file', function(done) {
+    Upload.uploadLocalFile(session, 'FAIL.zip')
+      .then(function(result) { done(new Error('Unexpected success!')); })
+      .fail(function(err) { done(); });
+  });
+  
+  it('should fail uploading unacceptable file format', function(done) {
+    Upload.uploadLocalFile(session, './config.js')
+      .then(function(result) { done(new Error('Unexpected success!')); })
+      .fail(function(err) { done(); });
   });
 });
