@@ -14,6 +14,8 @@ var locks = require('locks');
 //state variables
 var uploadMutexs = {};
 
+//TODO if file upload size == 0, delete + error
+
 /**
  * Locks an upload for a session. Call done() if finished.
  * Example:
@@ -83,6 +85,9 @@ function clearTempDirectory() {
   return deferred.promise;
 }
 
+/**
+ * Unpacks a OBJs from zip file and all its MTL and textures. Converts TGAs to PNGs.
+ */
 function unpack(sourceFileName, destinationFolder) {
   var deferred = Q.defer();
   var command = Config.UNPACKER_EXECUTABLE_PATH + ' "' + sourceFileName + '" "'+destinationFolder+'"';
@@ -178,10 +183,54 @@ function uploadLocalFile(session, fileName) {
   return deferred.promise;
 }
 
+/**
+ * @returns a listing of all files uploaded in this session.
+ */
+function enumerate(session) {
+  var deferred = Q.defer();
+  var sessionPath = path.join(Config.SESSIONS_PATH, session.cookie);
+  var result = [];
+  fse.walk(sessionPath)
+    .on('data', function(item) { 
+      if(!item.stats.isFile())
+        return;
+      result.push({
+        path: item.path.substr(sessionPath.length+1),
+        size: item.stats.size
+      });
+    })
+    .on('error', function(err) { deferred.reject(err); })
+    .on('end', function() {
+      deferred.resolve(result);
+    });;
+  return deferred.promise;
+}
+
+function get(session, uploadFolderName, filePath) {
+  var deferred = Q.defer();
+  var fullFilePath = path.join(Config.SESSIONS_PATH, session.cookie, uploadFolderName, filePath);
+  var parts = fullFilePath.split('/', '\\');
+  var index = _.findIndex(parts, function(part) { return part === '..'; });
+  if(index !== -1)
+    deferred.reject(new Error('".." is not allowed!'));
+  fs.stat(fullFilePath, function(err, stats) {
+    if(err) return deferred.reject(err);
+    if(!stats.isFile()) return deferred.reject(new Error('Path is not a file!'));
+    fse.readFile(fullFilePath, function(err2, data) {
+      if(err) return deferred.reject(err);
+      deferred.resolve(data);
+    });
+  });
+  return deferred.promise;
+}
+
 module.exports = {
   clearTempDirectory: clearTempDirectory,
   clearSessionsDirectory: clearSessionsDirectory,
   
   uploadLocalFile: uploadLocalFile,
-  uploadBuffer: uploadBuffer
+  uploadBuffer: uploadBuffer,
+  
+  enumerate: enumerate,
+  get: get
 };
