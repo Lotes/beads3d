@@ -8,8 +8,8 @@ var upload = multer();
 var cookieParser = require('cookie-parser');
 var ioCookieParser = require('socket.io-cookie-parser');
 var session = require('./middleware/session');
-var Model = require('./resources/Model');
-var Session = require('./resources/Session');
+var Upload = require('./resources/upload');
+var Session = require('./resources/session');
 var database = require('./database/index');
 var Config = require('./config');
 var path = require('path');
@@ -31,62 +31,51 @@ app.get('/', function (req, res) {
 });
 
 app.post('/uploads', upload.single('file'), function(req, res) {
-  //TODO OBJ file validator einbauen
-	Model.create(req.file.originalname, req.file.buffer, req.session)
-    .then(function(model) {
-      console.log('Creating model... '+model.name);
-      res.send(model.name);
+	Upload.uploadBuffer(req.session, req.file.originalname, req.file.buffer)
+    .then(function(folderName) {
+      console.log('Uploading... --> '+folderName);
+      res.send(folderName);
     }, function(err) {
-      console.log('Creating model... FAIL: '+err.message);
+      console.log('Uploading... FAIL: '+err.message);
       res.status(500).send(err.message);
     });
 });
 
 app.get('/uploads', function(req, res) {
-  Model.query({
-    session: req.session
-  }).then(function(models) {
-    console.log('Enumerating models for session "'+req.session.cookie+'"... OK: '+models.length);
-    var result = [];
-    models.forEach(function(model) {
-      result.push({
-        name: model.name,
-        displayName: model.displayName,
-        size: model.size
-      });
+  Upload.enumerate(req.session)
+    .then(function(list) {
+      console.log('Enumerating uploads... OK');
+      res.json(list);
+    }, function(err) {
+      console.log('Enumerating uploads... FAIL: '+err.message);
+      res.status(500).send(err.message);
     });
-    res.json(result);
-  }, function(err) {
-    console.log('Enumerating models for session "'+req.session.cookie+'"... FAIL: '+err.message);
-    res.status(500).send(err.message);
-  });
 });
 
-app.get('/uploads/:name', function(req, res) {
-  Model.data(req.session, req.params.name)
+app.get('/uploads/:folder/:path*', function(req, res) {
+  Upload.get(req.session, req.params.folder, req.params.path)
     .then(function(data) {
-      console.log('Reading model "'+req.params.name+'"... OK');
-      res.header("Content-Type", "text/plain");
+      console.log('Downloading uploaded file "'+req.params.folder+'/'+req.params.path+'"... OK');
       res.send(data);
     }, function(err) {
-      console.log('Reading model "'+req.params.name+'"... FAIL: '+err.message);
+      console.log('Downloading uploaded file "'+req.params.folder+'/'+req.params.path+'"... FAIL: '+err.message);
       res.status(500).send(err.message);
     });
 });
 
 app.delete('/uploads/:name', function(req, res) {
-  Model.remove(req.session, req.params.name)
+  Upload.remove(req.session, req.params.name)
     .then(function() {
-      console.log('Deleting model "'+req.params.name+'"... OK');
+      console.log('Deleting upload "'+req.params.name+'"... OK');
       res.end();
     }, function(err) {
-      console.log('Deleting model "'+req.params.name+'"... FAIL: '+err.message);
+      console.log('Deleting upload "'+req.params.name+'"... FAIL: '+err.message);
       res.status(500).send(err.message);
     });
 });
 
 io.sockets.on('connection', function (socket) {
-	socket.on('initialize', function (data) {
+	/*socket.on('initialize', function (data) {
     Model.beadify(socket.request.session, data.name, data.size)
       .then(function(data) {
         socket.emit('result', data);
@@ -95,39 +84,36 @@ io.sockets.on('connection', function (socket) {
       }, function(progress) {
         socket.emit('progress', progress);
       });
-	});
+	});*/
 });
 
 console.log('Running!');
 
 if(app.settings.env !== 'production') {
   console.log('Initializing development environment');
-  Session
-    .clear()
-    .then(function() {
-      console.log('-cleared sessions');
-      return Model.clear();
-    })
-    .then(function() {
-      console.log('-cleared models');
-      return Session.create(Config.DEVELOPMENT_SESSION);
-    })
-    .then(function(session) {
-      console.log('-created development session "'+session.cookie+'"');
-      var data = fs.readFileSync(path.join(Config.DEVELOPMENT_DATA_PATH, 'models', 'pikachu', 'model.obj'));
-      return Q.all([
-        Model.create('pikachu.obj', data, session),
-        Model.create('pikachu2.obj', data, session)
-      ]);
-    })
-    .then(function() {
-      console.log('-uploaded Pikachu models');
-    })
-    .fail(function(err) {
-      console.log('-FAIL: '+err.message);
-    });
+  Q.all([
+    Session.clear(),
+    Upload.clearTempDirectory(),
+    Upload.clearSessionsDirectory()
+  ]).then(function() {
+    console.log('-cleared sessions, temporary and uploads directory');
+    return Session.create(Config.DEVELOPMENT_SESSION);
+  })
+  .then(function(session) {
+    console.log('-created development session "'+session.cookie+'"');
+    var venusaurModelPath = path.join(Config.DEVELOPMENT_DATA_PATH, 'models', 'venusaur.zip');
+    return Q.all([
+      Upload.uploadLocalFile(session, venusaurModelPath),
+      Upload.uploadLocalFile(session, venusaurModelPath)
+    ]);
+  })
+  .then(function() {
+    console.log('-uploaded demo models');
+  })
+  .fail(function(err) {
+    console.log('-FAIL: '+err.message);
+  });
   //TODO empty images
-  //TODO add dummy model, session and image
 }
 
 module.exports = app;

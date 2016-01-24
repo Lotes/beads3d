@@ -184,7 +184,7 @@ function uploadLocalFile(session, fileName) {
 }
 
 /**
- * @returns a listing of all files uploaded in this session.
+ * @returns a listing of all files uploaded in this session
  */
 function enumerate(session) {
   var deferred = Q.defer();
@@ -206,10 +206,13 @@ function enumerate(session) {
   return deferred.promise;
 }
 
+/**
+ * Get a specific file of an upload folder.
+ */
 function get(session, uploadFolderName, filePath) {
   var deferred = Q.defer();
   var fullFilePath = path.join(Config.SESSIONS_PATH, session.cookie, uploadFolderName, filePath);
-  var parts = fullFilePath.split('/', '\\');
+  var parts = fullFilePath.split(/[\/\\]/);
   var index = _.findIndex(parts, function(part) { return part === '..'; });
   if(index !== -1)
     deferred.reject(new Error('".." is not allowed!'));
@@ -224,6 +227,23 @@ function get(session, uploadFolderName, filePath) {
   return deferred.promise;
 }
 
+/**
+ * Remove an entire upload folder.
+ */
+function remove(session, uploadFolderName) {
+  var deferred = Q.defer();
+  if(/([\\\/])/.test(uploadFolderName) || uploadFolderName === '..')
+    deferred.reject(new Error('Invalid upload name!'));
+  else {
+    var fullUploadPath = path.join(Config.SESSIONS_PATH, session.cookie, uploadFolderName);
+    fse.remove(fullUploadPath, function(err) {
+      if(err) return deferred.reject(err);
+      deferred.resolve();
+    });
+  }
+  return deferred.promise;  
+}
+
 module.exports = {
   clearTempDirectory: clearTempDirectory,
   clearSessionsDirectory: clearSessionsDirectory,
@@ -232,5 +252,6 @@ module.exports = {
   uploadBuffer: uploadBuffer,
   
   enumerate: enumerate,
-  get: get
+  get: get,
+  remove: remove
 };

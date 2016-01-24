@@ -1,6 +1,6 @@
 var socket;
 
-angular.module('beads3d', ['ui.bootstrap-slider', 'ngRoute', 'mgo-angular-wizard'])
+angular.module('beads3d', ['ui.bootstrap-slider', 'ngRoute', 'mgo-angular-wizard', 'ui.tree'])
   .config(function($routeProvider, $locationProvider) {
     socket = io.connect();
     $routeProvider
@@ -36,21 +36,15 @@ angular.module('beads3d', ['ui.bootstrap-slider', 'ngRoute', 'mgo-angular-wizard
         redirectTo: '/'
       });
   })
-  .service('Model', function($http) {
-    this.data = function(name) {
-      return $http.get('/uploads/'+name);
+  .service('Upload', function($http) {
+    this.get = function(name, path) {
+      return $http.get('/uploads/'+encodeURI(name)+'/'+encodeURI(path));
     };
-    this.all = function() {
+    this.enumerate = function() {
       return $http.get('/uploads');
     };
     this.remove = function(name) {
-      return $http.delete('/uploads/'+name);
-    };
-    this.beadify = function(name, size) {
-      socket.emit('initialize', {
-        name: name,
-        size: size
-      });
+      return $http.delete('/uploads/'+encodeURI(name));
     };
   })
   .service('Loader', function($q) {
@@ -91,7 +85,7 @@ angular.module('beads3d', ['ui.bootstrap-slider', 'ngRoute', 'mgo-angular-wizard
       $location.path('/search/'+encodeURIComponent($scope.searchParameters.pattern));
     };
   })
-  .controller('ImportController', function($scope, Model, $window, Loader, $location) {
+  .controller('ImportController', function($scope, Upload, $window, Loader, $location) {
     var uploadButton = $('#uploadButton');
     $scope.uploadFile = null;
     $scope.uploading = false;
@@ -136,14 +130,50 @@ angular.module('beads3d', ['ui.bootstrap-slider', 'ngRoute', 'mgo-angular-wizard
         });
     });
     
-    $scope.models = [];
+    $scope.toggleNode = function(node) {
+      node.expanded = !node.expanded;
+    };
+    $scope.uploads = {};
+    function addFile(file) {
+      var parts = file.path.split(/[\/\\]/);
+      console.log(parts);
+      var uploadName = parts[0];
+      if(!(uploadName in $scope.uploads))
+        $scope.uploads[uploadName] = {
+          type: 'upload',
+          expanded: true,
+          name: uploadName,
+          children: {}
+        };
+      var node = $scope.uploads[uploadName];
+      for(var index=1; index<parts.length; index++) {
+        var part = parts[index];
+        if(!(part in node.children))
+          if(index < parts.length - 1)
+            node.children[part] = {
+              type: 'directory',
+              expanded: false,
+              name: part,
+              children: {}
+            };
+          else
+            node.children[part] = {
+              type: 'file',
+              name: part,
+              children: {},
+              size: file.size
+            };
+        node = node.children[part];
+      }
+    }
     $scope.refresh = function() {
-      Model.all().then(function(res) {
-        $scope.models = res.data;
-        if($scope.models.length > 0)
-          $scope.selection.model = $scope.models[0].name;
+      Upload.enumerate().then(function(res) {
+        $scope.uploads = {};
+        res.data.forEach(addFile);
+        console.log($scope.uploads);
       });
     };
+    
     $scope.next = function() {
       $location.path('/beadify/'+$scope.selection.model);
     };
@@ -163,14 +193,14 @@ angular.module('beads3d', ['ui.bootstrap-slider', 'ngRoute', 'mgo-angular-wizard
     $scope.removeModel = function() {
       $('#removeDialog').modal('hide');
       $scope.selection.model = null;
-      Model.remove(toRemove).then(function() {
+      Upload.remove(toRemove).then(function() {
         $scope.refresh();
       });
     };
     
     $scope.refresh();
   })
-  .controller('BeadifyController', function($scope, $location, $routeParams, Loader, Model) {    
+  .controller('BeadifyController', function($scope, $location, $routeParams, Loader, Upload) {    
     var modelName = $routeParams.model;
     var loader = {
       model: new THREE.Object3D(),
@@ -340,7 +370,7 @@ angular.module('beads3d', ['ui.bootstrap-slider', 'ngRoute', 'mgo-angular-wizard
       computing: false,
       compute: function() {
         $scope.result.computing = true;
-        Model.beadify(modelName, $scope.result.size);
+        //TODO Model.beadify(modelName, $scope.result.size);
       },
       preTransform: null,
       postTransform: null,

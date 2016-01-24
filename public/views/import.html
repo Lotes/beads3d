@@ -24,16 +24,24 @@
         </button>
       </h2>
       
-      <div>
-        <ul class="list-group">
-          <li ng-class="{ 'list-group-item-action': true, 'list-group-item': true, active: selection.model == model.name }" ng-repeat="model in models">
-            <label>
-              <input type="radio" ng-value="model.name" ng-model="selection.model"/>
-              {{model.displayName}}
-              <span class="badge">{{model.size | bytes}}</span>
-            </label>
+      <script type="text/ng-template" id="uploadTree.html">
+        <div>
+          <span ng-class="{ glyphicon: true, 'glyphicon-menu-right': node.type != 'file' && !node.expanded, 'glyphicon-menu-down': node.type != 'file' && node.expanded }" style="cursor: pointer" ng-click="toggleNode(node)"></span>
+          <span ng-if="node.type == 'upload'" class="glyphicon glyphicon-book"/>
+          <span ng-if="node.type == 'directory'" ng-class="{ glyphicon: true, 'glyphicon-folder-open': node.expanded,  'glyphicon-folder-close': !node.expanded }"/>
+          {{node.name}} 
+          <span class="badge" ng-if="node.type == 'file'">{{node.size | bytes}}</span>
+        </div>
+        <ol ui-tree-nodes="" ng-model="node.children" ng-show="node.type != 'file' && node.expanded">
+          <li ng-repeat="node in node.children" ui-tree-node ng-include="'uploadTree.html'">
           </li>
-        </ul>
+        </ol>
+      </script>
+      
+      <div ui-tree>
+        <ol ui-tree-nodes="" ng-model="uploads">
+          <li ng-repeat="node in uploads" ui-tree-node ng-include="'uploadTree.html'"></li>
+        </ol>
       </div>
 
       <button class="btn btn-default" ng-click="back()">Back</button>

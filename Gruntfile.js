@@ -52,7 +52,6 @@ module.exports = function(grunt) {
   grunt.loadNpmTasks('grunt-mocha-test');
   grunt.loadNpmTasks('grunt-node-inspector');
   
-  grunt.registerTask('default', ['express']);
   grunt.registerTask('test', ['mochaTest:server']);
   grunt.registerTask('debug', ['node-inspector:tests']);
 };

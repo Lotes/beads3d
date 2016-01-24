@@ -5,6 +5,7 @@ var Config = require('../../config');
 var Session = require('../../resources/session');
 var should = require('should');
 var _ = require('lodash');
+var fs = require('fs');
 
 describe('Upload resource', function() {
   var venusaurModelPath = path.join(Config.DEVELOPMENT_DATA_PATH, 'models', 'venusaur.zip');
@@ -88,6 +89,18 @@ describe('Upload resource', function() {
       Upload.get(session, uploadFolderName, 'nonsense.obj')
         .then(function(data) { done(new Error('Unexpected success!')); })
         .fail(function(err) { done(); });
+    });
+    
+    it('should remove upload', function(done) {
+      Upload.remove(session, uploadFolderName)
+        .then(function() { 
+          var fullFolderPath = path.join(Config.SESSIONS_PATH, session.cookie, uploadFolderName);
+          fs.stat(fullFolderPath, function(err) {
+            if(err) return done();
+            done(new Error('Directory still exists!'));
+          });
+        })
+        .fail(done);
     });
   })
 });
