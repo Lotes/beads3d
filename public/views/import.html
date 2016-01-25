@@ -5,7 +5,7 @@
     <div class="col-sm-6 fill">
       <h2>Select model
         <form style="display: none">
-          <input id="uploadButton" type="file" file-model="uploadFile" accept=".obj"/>
+          <input id="uploadButton" type="file" file-model="uploadFile" accept=".zip"/>
         </form>
         <button class="btn btn-default" ng-click="upload()" title="Upload" ng-disabled="uploading">
           <span ng-hide="uploading"><span class="glyphicon glyphicon-upload"/> UPLOAD</span>
@@ -16,31 +16,41 @@
         <button class="btn btn-default" ng-click="refresh()" title="Refresh">
           <span class="glyphicon glyphicon-refresh"/>
         </button>
-        <button class="btn btn-default" ng-click="download(selection.model)" ng-disabled="selection.model == null" title="Download">
-          <span class="glyphicon glyphicon-download"/>
-        </button>
-        <button class="btn btn-danger" ng-click="tryRemoveModel(selection.model)" ng-disabled="selection.model == null" title="Remove">
-          <span class="glyphicon glyphicon-trash"/>
-        </button>
       </h2>
       
       <script type="text/ng-template" id="uploadTree.html">
         <div>
-          <span ng-class="{ glyphicon: true, 'glyphicon-menu-right': node.type != 'file' && !node.expanded, 'glyphicon-menu-down': node.type != 'file' && node.expanded }" style="cursor: pointer" ng-click="toggleNode(node)"></span>
-          <span ng-if="node.type == 'upload'" class="glyphicon glyphicon-book"/>
-          <span ng-if="node.type == 'directory'" ng-class="{ glyphicon: true, 'glyphicon-folder-open': node.expanded,  'glyphicon-folder-close': !node.expanded }"/>
-          {{node.name}} 
-          <span class="badge" ng-if="node.type == 'file'">{{node.size | bytes}}</span>
+          <span ng-click="(node.type != 'file' && toggleNode(node))" class="tree-item">
+            <span 
+              ng-if="node.type != 'file'" 
+              ng-class="{ glyphicon: true, 'glyphicon-folder-open': node.expanded,  'glyphicon-folder-close': !node.expanded }"
+            />
+            {{node.name}}
+            <span class="badge" ng-if="node.type == 'file'">{{node.size | bytes}}</span>
+          </span>
+          <button
+            class="btn btn-danger tree-item-button"
+            ng-if="node.type == 'upload'"
+            ng-click="tryRemoveUpload(node.name)" 
+            title="Remove"
+          >
+            <span class="glyphicon glyphicon-trash"/>
+          </button>
         </div>
-        <ol ui-tree-nodes="" ng-model="node.children" ng-show="node.type != 'file' && node.expanded">
-          <li ng-repeat="node in node.children" ui-tree-node ng-include="'uploadTree.html'">
+        <ol class="tree list-group" ng-show="node.type != 'file' && node.expanded">
+          <li 
+            class="list-group-item" 
+            ng-click="node.type == 'file' && (selection.model = node.path)"
+            ng-class="{ active: node.type == 'file' && selection.model == node.path }"
+            ng-repeat="node in node.children" ui-tree-node 
+            ng-include="'uploadTree.html'">
           </li>
         </ol>
       </script>
       
-      <div ui-tree>
-        <ol ui-tree-nodes="" ng-model="uploads">
-          <li ng-repeat="node in uploads" ui-tree-node ng-include="'uploadTree.html'"></li>
+      <div>
+        <ol class="tree list-group">
+          <li class="list-group-item" ng-repeat="node in uploads" ui-tree-node ng-include="'uploadTree.html'"></li>
         </ol>
       </div>
 
@@ -66,7 +76,7 @@
         <p>Do you really want to delete this model?</p>
       </div>
       <div class="modal-footer">
-        <button type="button" class="btn btn-primary" ng-click="removeModel()">Yes</button>
+        <button type="button" class="btn btn-primary" ng-click="removeUpload()">Yes</button>
         <button type="button" class="btn btn-default" data-dismiss="modal">No</button>
       </div>
     </div><!-- /.modal-content -->

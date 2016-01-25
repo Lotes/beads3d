@@ -1,6 +1,6 @@
 var socket;
 
-angular.module('beads3d', ['ui.bootstrap-slider', 'ngRoute', 'mgo-angular-wizard', 'ui.tree'])
+angular.module('beads3d', ['ui.bootstrap-slider', 'ngRoute', 'mgo-angular-wizard'])
   .config(function($routeProvider, $locationProvider) {
     socket = io.connect();
     $routeProvider
@@ -136,7 +136,6 @@ angular.module('beads3d', ['ui.bootstrap-slider', 'ngRoute', 'mgo-angular-wizard
     $scope.uploads = {};
     function addFile(file) {
       var parts = file.path.split(/[\/\\]/);
-      console.log(parts);
       var uploadName = parts[0];
       if(!(uploadName in $scope.uploads))
         $scope.uploads[uploadName] = {
@@ -160,6 +159,7 @@ angular.module('beads3d', ['ui.bootstrap-slider', 'ngRoute', 'mgo-angular-wizard
             node.children[part] = {
               type: 'file',
               name: part,
+              path: file.path,
               children: {},
               size: file.size
             };
@@ -169,8 +169,10 @@ angular.module('beads3d', ['ui.bootstrap-slider', 'ngRoute', 'mgo-angular-wizard
     $scope.refresh = function() {
       Upload.enumerate().then(function(res) {
         $scope.uploads = {};
-        res.data.forEach(addFile);
-        console.log($scope.uploads);
+        res.data.forEach(function(file) {
+          if(/\.obj$/i.test(file.path))
+            addFile(file);
+        });
       });
     };
     
@@ -181,16 +183,12 @@ angular.module('beads3d', ['ui.bootstrap-slider', 'ngRoute', 'mgo-angular-wizard
       $location.path('/new');
     };
     
-    $scope.download = function(name) {
-      $window.open('/uploads/'+name);
-    };
-    
     var toRemove;
-    $scope.tryRemoveModel = function(name) {
+    $scope.tryRemoveUpload = function(name) {
       toRemove = name;
       $('#removeDialog').modal('show');
     };
-    $scope.removeModel = function() {
+    $scope.removeUpload = function() {
       $('#removeDialog').modal('hide');
       $scope.selection.model = null;
       Upload.remove(toRemove).then(function() {
