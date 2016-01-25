@@ -68,7 +68,7 @@ angular.module('beads3d', ['ui.bootstrap-slider', 'ngRoute', 'mgo-angular-wizard
     };
     this.loadOBJ = function(url) {
       var deferred = $q.defer();
-      new THREE.OBJLoader().load(url, function(obj) {
+      new THREE.OBJMTLLoader().loadByOBJ(url, function(obj) {
         deferred.resolve(obj);
       }, function(progress) {
         //nothing
@@ -159,7 +159,7 @@ angular.module('beads3d', ['ui.bootstrap-slider', 'ngRoute', 'mgo-angular-wizard
             node.children[part] = {
               type: 'file',
               name: part,
-              path: file.path,
+              path: file.path.replace(/\\/g, '/'),
               children: {},
               size: file.size
             };

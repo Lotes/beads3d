@@ -52,13 +52,15 @@ app.get('/uploads', function(req, res) {
     });
 });
 
-app.get('/uploads/:folder/:path*', function(req, res) {
-  Upload.get(req.session, req.params.folder, req.params.path)
+app.get(/^\/uploads\/([^\/]+)\/(.*)$/, function(req, res) {
+  var folder = req.params[0];
+  var path = req.params[1];
+  Upload.get(req.session, folder, path)
     .then(function(data) {
-      console.log('Downloading uploaded file "'+req.params.folder+'/'+req.params.path+'"... OK');
+      console.log('Downloading uploaded file "'+folder+'/'+path+'"... OK');
       res.send(data);
     }, function(err) {
-      console.log('Downloading uploaded file "'+req.params.folder+'/'+req.params.path+'"... FAIL: '+err.message);
+      console.log('Downloading uploaded file "'+folder+'/'+path+'"... FAIL: '+err.message);
       res.status(500).send(err.message);
     });
 });
