@@ -1,0 +1,11 @@
+To compile the C++ programs under Cygwin install the following packages:
+
+g++
+libfreeimage --> see http://cygwinports.org/ + dependencies!
+libboost-devel
+libboost_regex
+libboost_system
+libboost_filesystem
+libzip-devel
+
+To run the executable under Windows run "dependencies.cyg.sh" in the Cygwin bash!

@@ -1,0 +1,7 @@
+voxelify:
+	mkdir -p tools/bin
+	g++ -g -otools/bin/voxelify -std=c++11 tools/voxelify.cpp -I/usr/include -L/usr/lib -llibfreeimage -llibboost_regex -llibboost_system -llibboost_filesystem
+   
+zip2obj:
+	mkdir -p tools/bin
+	g++ -g -otools/bin/zip2obj -std=c++11 tools/zip2obj.cpp -I/usr/include -L/usr/lib -llibfreeimage -llibboost_regex -llibboost_system -llibboost_filesystem -lzip
