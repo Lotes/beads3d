@@ -22,6 +22,8 @@ io.use(function(socket, next) {
   session(socket.request, {}, next);
 });
 
+app.use(require("express-chrome-logger"));
+
 app.use(cookieParser());
 app.use(session);
 app.use(express.static(__dirname + '/public'));
@@ -33,10 +35,10 @@ app.get('/', function (req, res) {
 app.post('/uploads', upload.single('file'), function(req, res) {
 	Upload.uploadBuffer(req.session, req.file.originalname, req.file.buffer)
     .then(function(folderName) {
-      console.log('Uploading... --> '+folderName);
+      res.console.log('Uploading... --> '+folderName);
       res.send(folderName);
     }, function(err) {
-      console.log('Uploading... FAIL: '+err.message);
+      res.console.log('Uploading... FAIL: '+err.message);
       res.status(500).send(err.message);
     });
 });
@@ -44,10 +46,10 @@ app.post('/uploads', upload.single('file'), function(req, res) {
 app.get('/uploads', function(req, res) {
   Upload.enumerate(req.session)
     .then(function(list) {
-      console.log('Enumerating uploads... OK');
+      res.console.log('Enumerating uploads... OK');
       res.json(list);
     }, function(err) {
-      console.log('Enumerating uploads... FAIL: '+err.message);
+      res.console.log('Enumerating uploads... FAIL: '+err.message);
       res.status(500).send(err.message);
     });
 });
@@ -57,21 +59,21 @@ app.get(/^\/uploads\/([^\/]+)\/(.*)$/, function(req, res) {
   var path = req.params[1];
   Upload.get(req.session, folder, path)
     .then(function(data) {
-      console.log('Downloading uploaded file "'+folder+'/'+path+'"... OK');
+      res.console.log('Downloading uploaded file "'+folder+'/'+path+'"... OK');
       res.send(data);
     }, function(err) {
-      console.log('Downloading uploaded file "'+folder+'/'+path+'"... FAIL: '+err.message);
+      res.console.log('Downloading uploaded file "'+folder+'/'+path+'"... FAIL: '+err.message);
       res.status(500).send(err.message);
     });
 });
 
-app.delete('/uploads/:name', function(req, res) {
+app['delete']('/uploads/:name', function(req, res) {
   Upload.remove(req.session, req.params.name)
     .then(function() {
-      console.log('Deleting upload "'+req.params.name+'"... OK');
+      res.console.log('Deleting upload "'+req.params.name+'"... OK');
       res.end();
     }, function(err) {
-      console.log('Deleting upload "'+req.params.name+'"... FAIL: '+err.message);
+      res.console.log('Deleting upload "'+req.params.name+'"... FAIL: '+err.message);
       res.status(500).send(err.message);
     });
 });

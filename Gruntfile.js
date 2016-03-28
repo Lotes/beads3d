@@ -4,23 +4,6 @@ var path = require('path');
 
 module.exports = function(grunt) {
   grunt.initConfig({
-    php: {
-        server: {
-            options: {
-                port: 8080,
-                base: '.',
-                keepalive: true,
-                open: false
-            }
-        }
-    },
-    express: {
-        server: {
-            options: {
-                script: 'server.js'
-            }
-        }
-    },
     mochaTest: {
       server: {
         options: {
@@ -31,6 +14,13 @@ module.exports = function(grunt) {
         },
         src: ['tests/**/*.spec.js']
       }
+    },
+    browserify: {
+    	client: {
+    		  	files: {
+    	    		'public/app/app.js': ['client/**/*.js']
+    	    	}
+    	}
     },
     'node-inspector': {
       tests: {
@@ -47,11 +37,11 @@ module.exports = function(grunt) {
   });
 
   grunt.loadNpmTasks('grunt-contrib-watch');
-  grunt.loadNpmTasks('grunt-php');
-  grunt.loadNpmTasks('grunt-express');
   grunt.loadNpmTasks('grunt-mocha-test');
   grunt.loadNpmTasks('grunt-node-inspector');
+  grunt.loadNpmTasks('grunt-browserify');
   
   grunt.registerTask('test', ['mochaTest:server']);
   grunt.registerTask('debug', ['node-inspector:tests']);
+  grunt.registerTask('client', ['browserify:client']);
 };

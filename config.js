@@ -1,6 +1,6 @@
 var path = require('path');
 
-var VOXELIFY_PATH = path.join(__dirname, 'voxelify');
+var VOXELIFY_PATH = path.join(__dirname, 'tools', 'bin');
 
 module.exports = {
   DEVELOPMENT_SESSION: 'development',
