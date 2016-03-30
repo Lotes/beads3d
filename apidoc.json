@@ -1,0 +1,7 @@
+{
+  "name": "beads3d",
+  "version": "1.0.0",
+  "description": "beads3d server API",
+  "title": "Beads 3D Server API",
+  "url" : "http://localhost:8080/"
+}

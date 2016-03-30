@@ -25,12 +25,15 @@ module.exports = function(app) {
         templateUrl: 'views/import.html',
         controller: 'ImportController'
       })
-      .when('/beadify/:model', {
+      .when('/beadify/:model*', {
         templateUrl: 'views/beadify.html',
         controller: 'BeadifyController'
       })
       .otherwise({
         redirectTo: '/'
       });
+  });
+  app.run(function() {
+	  //TODO?
   });
 };

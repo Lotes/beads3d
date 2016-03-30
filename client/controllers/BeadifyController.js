@@ -1,5 +1,5 @@
 module.exports = function(app) {
-  app.controller('BeadifyController', function($scope, $location, $routeParams, Loader, Upload) {    
+  app.controller('BeadifyController', function($scope, $location, $routeParams, Loader, Upload, Socket) {    
     var modelName = $routeParams.model;
     var loader = {
       model: new THREE.Object3D(),
@@ -214,13 +214,13 @@ module.exports = function(app) {
       container.scale.set(1/size, 1/size, 1/size);
       $scope.result.scene.add(container);
     }
-    socket.on('progress', onProgress);
-    socket.on('error', onError);
-    socket.on('result', onResult);
+    Socket.on('progress', onProgress);
+    Socket.on('error', onError);
+    Socket.on('result', onResult);
     $scope.$on('$destroy', function() {
-      socket.off('progress', onProgress);
-      socket.off('error', onError);
-      socket.off('result', onResult);
+      Socket.off('progress', onProgress);
+      Socket.off('error', onError);
+      Socket.off('result', onResult);
     });
     
     //=== EXIT NAVIGATION ===

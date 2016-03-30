@@ -22,6 +22,15 @@ module.exports = function(grunt) {
     	    	}
     	}
     },
+    apidoc: {
+      server: {
+        src: '.',
+        dest: 'apidoc/',
+        options: {
+          excludeFilters: [ 'node_modules', 'ignore', 'client', 'public' ]
+        }
+      }
+    },
     'node-inspector': {
       tests: {
         options: {
@@ -40,8 +49,10 @@ module.exports = function(grunt) {
   grunt.loadNpmTasks('grunt-mocha-test');
   grunt.loadNpmTasks('grunt-node-inspector');
   grunt.loadNpmTasks('grunt-browserify');
+  grunt.loadNpmTasks('grunt-apidoc');
   
   grunt.registerTask('test', ['mochaTest:server']);
   grunt.registerTask('debug', ['node-inspector:tests']);
   grunt.registerTask('client', ['browserify:client']);
+  grunt.registerTask('doc', ['apidoc:server']);
 };

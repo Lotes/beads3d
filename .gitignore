@@ -39,3 +39,5 @@
 /setup-cygwin.exe
 /tools/bin
 /public/app/app.js
+/ignore
+/apidoc

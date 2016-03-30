@@ -32,6 +32,21 @@ app.get('/', function (req, res) {
 	res.sendfile(__dirname + '/public/index.html');
 });
 
+/**
+ * @api {post} /uploads
+ * @apiName CreateUpload
+ * @apiGroup Upload
+ * @apiDescription Uploads a zip archive containing OBJ and PNG files for current session.
+ *
+ * @apiSuccess {String} folderName
+ *
+ * @apiSuccessExample Success-Response
+ *     HTTP/1.1 200 OK
+ *     "pikachu"
+ *
+ * @apiError TypeNotAccepted file is no valid zip file
+ * @apiError SessionSpaceExceeded session space limit reached
+ */
 app.post('/uploads', upload.single('file'), function(req, res) {
 	Upload.uploadBuffer(req.session, req.file.originalname, req.file.buffer)
     .then(function(folderName) {
@@ -43,6 +58,29 @@ app.post('/uploads', upload.single('file'), function(req, res) {
     });
 });
 
+/**
+ * @api {get} /uploads
+ * @apiName EnumerateUploads
+ * @apiGroup Upload
+ * @apiDescription Enumerates all uploaded files of a session.
+ *
+ * @apiSuccess {Object[]} files list of all files
+ * @apiSuccess {String} files.path path of a file
+ * @apiSuccess {Number} size of that file in bytes
+ *
+ * @apiSuccessExample Success-Response
+ *     HTTP/1.1 200 OK
+ *     [
+ *         {
+ *             "path": "pikachu/model.obj",
+ *             "size": 123456
+ *         },
+ *         {
+ *             "path": "pikachu/texture.png",
+ *             "size": 654321
+ *         }
+ *     ]
+ */
 app.get('/uploads', function(req, res) {
   Upload.enumerate(req.session)
     .then(function(list) {
