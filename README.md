@@ -3,7 +3,7 @@ beads3d
 
 This project provides the source code for a website for making ironing beads images in 3D.
 You can upload an OBJ file, "voxelify" it to a desired size to an image and then colorize it.
-It will also be possible to draw 2D images.
+
 
 TODO
 ----
@@ -12,6 +12,10 @@ TODO
  * add picture to bead image conversion
  * editor
  * PDF export
+ * Travis-CI
+ * OpenShift script
+ * Passport for Google/Local
+ * URL upload
 
 Uploads folder
 --------------
