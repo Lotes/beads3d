@@ -15,6 +15,21 @@ module.exports = function(grunt) {
         src: ['tests/**/*.spec.js']
       }
     },
+    protractor: {
+      options: {
+        configFile: "node_modules/protractor/example/conf.js",
+        keepAlive: true,
+        noColor: false,
+        args: {
+        }
+      },
+      client: {
+        options: {
+          configFile: 'e2e.conf.js',
+          args: {}
+        }
+      },
+    },
     browserify: {
     	client: {
     		  	files: {
@@ -50,8 +65,10 @@ module.exports = function(grunt) {
   grunt.loadNpmTasks('grunt-node-inspector');
   grunt.loadNpmTasks('grunt-browserify');
   grunt.loadNpmTasks('grunt-apidoc');
+  grunt.loadNpmTasks('grunt-protractor-runner');
   
-  grunt.registerTask('test', ['mochaTest:server']);
+  grunt.registerTask('test-client', ['protractor:client']);
+  grunt.registerTask('test-server', ['mochaTest:server']);
   grunt.registerTask('debug', ['node-inspector:tests']);
   grunt.registerTask('client', ['browserify:client']);
   grunt.registerTask('doc', ['apidoc:server']);
