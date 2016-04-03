@@ -1,4 +1,3 @@
-//globals
 var Q = require('q');
 var database = require('../database/index');
 var Upload = database.Upload;
@@ -10,11 +9,11 @@ var process = require('child_process');
 var path = require('path');
 var _ = require('lodash');
 var locks = require('locks');
+var multer = require('multer');
+var upload = multer();
 
 //state variables
 var uploadMutexs = {};
-
-//TODO if file upload size == 0, delete + error
 
 /**
  * Locks an upload for a session. Call done() if finished.
@@ -244,6 +243,107 @@ function remove(session, uploadFolderName) {
   return deferred.promise;  
 }
 
+/**
+ * Setup server routes for Upload resource.
+ */
+function setup(app) {
+  /**
+   * @api {post} /uploads
+   * @apiName CreateUpload
+   * @apiGroup Upload
+   * @apiDescription Uploads a zip archive containing OBJ and PNG files for current session.
+   *
+   * @apiSuccess {String} folderName
+   *
+   * @apiSuccessExample Success-Response
+   *     HTTP/1.1 200 OK
+   *     "pikachu"
+   *
+   * @apiError TypeNotAccepted file is no valid zip file
+   * @apiError SessionSpaceExceeded session space limit reached
+   */
+  app.post('/uploads', upload.single('file'), function(req, res) {
+    uploadBuffer(req.session, req.file.originalname, req.file.buffer)
+      .then(function(folderName) {
+        res.console.log('Uploading... --> '+folderName);
+        res.send(folderName);
+      }, function(err) {
+        res.console.log('Uploading... FAIL: '+err.message);
+        res.status(500).send(err.message);
+      });
+  });
+
+  /**
+   * @api {get} /uploads
+   * @apiName EnumerateUploads
+   * @apiGroup Upload
+   * @apiDescription Enumerates all uploaded files of a session.
+   *
+   * @apiSuccess {Object[]} files list of all files
+   * @apiSuccess {String} files.path path of a file
+   * @apiSuccess {Number} size of that file in bytes
+   *
+   * @apiSuccessExample Success-Response
+   *     HTTP/1.1 200 OK
+   *     [
+   *         {
+   *             "path": "pikachu/model.obj",
+   *             "size": 123456
+   *         },
+   *         {
+   *             "path": "pikachu/texture.png",
+   *             "size": 654321
+   *         }
+   *     ]
+   */
+  app.get('/uploads', function(req, res) {
+    enumerate(req.session)
+      .then(function(list) {
+        res.console.log('Enumerating uploads... OK');
+        res.json(list);
+      }, function(err) {
+        res.console.log('Enumerating uploads... FAIL: '+err.message);
+        res.status(500).send(err.message);
+      });
+  });
+
+  /**
+   * @api {get} /uploads/:folder/:file*
+   * @apiName GetUploadedFile
+   * @apiGroup Upload
+   * @apiDescription Downloads a file from a session.
+   */
+  app.get(/^\/uploads\/([^\/]+)\/(.*)$/, function(req, res) {
+    var folder = req.params[0];
+    var path = req.params[1];
+    get(req.session, folder, path)
+      .then(function(data) {
+        res.console.log('Downloading uploaded file "'+folder+'/'+path+'"... OK');
+        res.send(data);
+      }, function(err) {
+        res.console.log('Downloading uploaded file "'+folder+'/'+path+'"... FAIL: '+err.message);
+        res.status(500).send(err.message);
+      });
+  });
+
+  /**
+   * @api {delete} /uploads/:folder
+   * @apiName DeleteUpload
+   * @apiGroup Upload
+   * @apiDescription Deletes an upload from a session.
+   */
+  app['delete']('/uploads/:name', function(req, res) {
+    remove(req.session, req.params.name)
+      .then(function() {
+        res.console.log('Deleting upload "'+req.params.name+'"... OK');
+        res.end();
+      }, function(err) {
+        res.console.log('Deleting upload "'+req.params.name+'"... FAIL: '+err.message);
+        res.status(500).send(err.message);
+      });
+  });
+}
+
 module.exports = {
   clearTempDirectory: clearTempDirectory,
   clearSessionsDirectory: clearSessionsDirectory,
@@ -253,5 +353,7 @@ module.exports = {
   
   enumerate: enumerate,
   get: get,
-  remove: remove
+  remove: remove,
+  
+  setup: setup
 };
