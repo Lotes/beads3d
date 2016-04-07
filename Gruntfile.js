@@ -4,6 +4,12 @@ var path = require('path');
 
 module.exports = function(grunt) {
   grunt.initConfig({
+    watch: {
+      client: {
+        files: ['client/**/*.js'],
+        tasks: ['client']
+      }
+    },
     mochaTest: {
       server: {
         options: {
@@ -12,7 +18,7 @@ module.exports = function(grunt) {
           timeout: 5000,
           clearRequireCache: false
         },
-        src: ['tests/**/*.spec.js']
+        src: ['tests/server/**/*.spec.js']
       }
     },
     protractor: {
@@ -67,9 +73,9 @@ module.exports = function(grunt) {
   grunt.loadNpmTasks('grunt-apidoc');
   grunt.loadNpmTasks('grunt-protractor-runner');
   
-  grunt.registerTask('test-client', ['protractor:client']);
+  grunt.registerTask('client', ['browserify:client']);
+  grunt.registerTask('test-client', ['client', 'protractor:client']);
   grunt.registerTask('test-server', ['mochaTest:server']);
   grunt.registerTask('debug', ['node-inspector:tests']);
-  grunt.registerTask('client', ['browserify:client']);
   grunt.registerTask('doc', ['apidoc:server']);
 };

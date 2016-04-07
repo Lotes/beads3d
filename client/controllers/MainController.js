@@ -1,5 +1,5 @@
 module.exports = function(app) {
-  app.controller('MainController', function($scope, $location) {
+  app.controller('MainController', function($scope, $location, $http) {
     $scope.searchParameters = {};
     $scope.searchParameters.pattern = '';
     $scope.search = function() {

@@ -1,54 +1,62 @@
-var Q = require('q');
 var mongoose = require('mongoose');
+var session = require('express-session');
+var MongoStore = require('connect-mongo')(session);
 var Schema = mongoose.Schema;
 
-var connection = mongoose.connect('mongodb://localhost/beads3d'); //TODO magic string
+var TABLE_USER = 'User';
+var TABLE_FOLLOW = 'Follow';
+var TABLE_SESSION = 'Session';
+var TABLE_UPLOAD = 'Upload';
+var TABLE_MODEL = 'Model';
+var TABLE_STAR = 'Star';
 
-var SessionSchema = new Schema({
+var connection = mongoose.connect('mongodb://localhost/beads3Dv2');
+
+var UserSchema = new Schema({
+  id: { type: String, index: { unique: true }},
+  name: { type: String },
+  photoUrl: { type: String }
+});
+
+var FollowSchema = new Schema({
+  user: { type: Schema.ObjectId, ref: TABLE_USER },
+  following: [{ type: Schema.ObjectId, ref: TABLE_USER }]
+});
+
+/*var SessionSchema = new Schema({
   cookie: { type: String, index: { unique: true }},
-  lastAccessAt: { type: Date, 'default': Date.now }
-});
-
-var ImageSchema = new Schema({
-  name: { type: String, index: { unique: true } }, //==file name in images directory
-  description: String,
-  createdAt: { type: Date, 'default': Date.now },
-  width: Number,
-  height: Number,
-  length: Number,
-  colors: [{
-    hex: String,
-    count: Number
-  }],
-  tags: [{ type: String, index: true }],
-  parent: { type: Schema.ObjectId, ref: 'images' },
-  session: { type: Schema.ObjectId, ref: 'sessions' }
-});
+  user: { type: Schema.ObjectId, ref: TABLE_USER },
+  createdAt: { type: Date, 'default': Date.now }
+});*/
 
 var UploadSchema = new Schema({
-  session: { type: Schema.ObjectId, ref: 'sessions' },
-  name: { type: String }, //==folder "sessions/{SESSIONID}/{name}"
-  uploadedAt: { type: Date, 'default': Date.now },
-  size: Number
+  owner: { type: Schema.ObjectId, ref: TABLE_USER },
+  name: { type: String },
+  files: [{
+    location: String,
+    size: Number
+  }]
+});
+
+var ModelSchema = new Schema({
+  owner: { type: Schema.ObjectId, ref: TABLE_USER },
+  createdAt: { type: Date, 'default': Date.now },
+  parent: { type: Schema.ObjectId, ref: TABLE_MODEL },
+  id: { type: String },
+  description: { type: String },
+  tags: [{ type: String }]
 });
 
 var StarSchema = new Schema({
-  image: { type: Schema.ObjectId, ref: 'images' },
-  session: { type: Schema.ObjectId, ref: 'sessions' },
-  timestamp: Date,
-  valid: Boolean
-});
-
-var ViewSchema = new Schema({
-  image: { type: Schema.ObjectId, ref: 'images' },
-  session: { type: Schema.ObjectId, ref: 'sessions' },
-  timestamp: Date
+  user: { type: Schema.ObjectId, ref: TABLE_USER },
+  model: { type: Schema.ObjectId, ref: TABLE_MODEL }
 });
 
 module.exports = {
-  Session: connection.model('sessions', SessionSchema),
-  Image: connection.model('images', ImageSchema),
-  Upload: connection.model('uploads', UploadSchema),
-  Star: connection.model('stars', StarSchema),
-  View: connection.model('views', ViewSchema)
+  User: connection.model(TABLE_USER, UserSchema),
+  Follow: connection.model(TABLE_FOLLOW, FollowSchema),
+  Upload: connection.model(TABLE_UPLOAD, UploadSchema),
+  Model: connection.model(TABLE_MODEL, ModelSchema),
+  Star: connection.model(TABLE_STAR, StarSchema),
+  Connection: connection.connection
 };

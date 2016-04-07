@@ -1,50 +1,96 @@
 var express = require('express');
+var session = require('express-session');
+var MongoStore = require('connect-mongo')(session);
+var passport = require('passport');
+var GooglePlusStrategy = require('passport-google-plus');
 var app = express();
 var server = require('http').createServer(app);
 var io = require('socket.io').listen(server);
 var fs = require('fs');
-var multer = require('multer');
-var upload = multer();
 var cookieParser = require('cookie-parser');
+var bodyParser = require('body-parser');
 var ioCookieParser = require('socket.io-cookie-parser');
-var session = require('./middleware/session');
-var Upload = require('./resources/upload');
-var Session = require('./resources/session');
 var database = require('./database/index');
+var User = require('./resources/user');
 var Config = require('./config');
 var path = require('path');
 var Q = require('q');
 
 server.listen(8080);
 
-io.use(ioCookieParser());
+/*io.use(ioCookieParser());
 io.use(function(socket, next) {
   session(socket.request, {}, next);
-});
+});*/
 
 app.use(require("express-chrome-logger"));
 
-app.use(cookieParser());
-app.use(session);
-app.use(express.static(__dirname + '/public'));
+app.use(cookieParser(Config.SESSION_SECRET));
+app.use(bodyParser.json());
+//app.use(bodyParser.urlencoded({ extended: false }));
+app.use(session({
+  secret: Config.SESSION_SECRET,
+  saveUninitialized: false,
+  resave: false,
+  cookie: {
+    maxAge: new Date(Date.now() + Config.SESSION_MAX_AGE)
+  },
+  store: new MongoStore({
+    mongooseConnection: database.Connection
+  })
+}));
+app.use(passport.initialize());
+app.use(passport.session());
+passport.use(new GooglePlusStrategy({
+    clientId: Config.GOOGLE_PLUS_CLIENT_ID,
+    clientSecret: Config.GOOGLE_PLUS_CLIENT_SECRET
+  },
+  function(tokens, profile, done) {
+    User
+      .put(profile.id, profile.displayName, profile.image.url)
+      .then(function(user) {
+        done(null, user, tokens);
+      }, function(err) {
+        done(err);
+      });
+  }
+));
+passport.serializeUser(function(user, done) {
+  return done(null, user.id);
+});
+passport.deserializeUser(function (id, done) {
+  User
+    .get(id)
+    .then(
+      function(user) { done(null, user); },
+      function(err) { done(err); }
+    );
+});
 
+app.use(express.static(__dirname + '/public'));
 app.get('/', function (req, res) {
 	res.sendfile(__dirname + '/public/index.html');
 });
 
-Upload.setup(app);
+app.get('/auth/google/client-id', function(req, res) {
+  res.json({
+    clientId: Config.GOOGLE_PLUS_CLIENT_ID
+  });
+});
+app.post('/auth/google/callback', passport.authenticate('google'), function(req, res) {
+  res.send(req.user);
+});
+app.get('/logout', function(req, res) {
+  req.session.destroy(function(e){
+    req.logout();
+    res.status(200).end();
+  });
+});
+
+/*Upload.setup(app);
 
 io.sockets.on('connection', function (socket) {
-	/*socket.on('initialize', function (data) {
-    Model.beadify(socket.request.session, data.name, data.size)
-      .then(function(data) {
-        socket.emit('result', data);
-      }, function(err) {
-        socket.emit('fail', err.message);
-      }, function(progress) {
-        socket.emit('progress', progress);
-      });
-	});*/
+
 });
 
 console.log('Running!');
@@ -75,5 +121,5 @@ if(app.settings.env !== 'production') {
   });
   //TODO empty images
 }
-
+*/
 module.exports = app;

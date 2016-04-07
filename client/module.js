@@ -1,4 +1,4 @@
-var app = angular.module('beads3d', ['ui.bootstrap-slider', 'ngRoute', 'mgo-angular-wizard']);
+var app = angular.module('beads3d', ['ui.bootstrap-slider', 'ngRoute', 'mgo-angular-wizard', 'directive.g+signin']);
 
 require('./bootstrap')(app);
 
@@ -13,6 +13,7 @@ require('./controllers/BeadifyController')(app);
 
 require('./directives/viewer')(app);
 require('./directives/fileModel')(app);
+require('./directives/connectButton')(app);
 
 require('./filters/bytes')(app);
 
