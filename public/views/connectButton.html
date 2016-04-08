@@ -1,14 +1,17 @@
 <div style="display:block">
-  <span ng-if="!loggedIn && clientId">
-    <google-plus-signin clientid="{{clientId}}"></google-plus-signin>
+  <span ng-if="!user && clientId">
+    <google-plus-signin 
+      clientid="{{clientId}}" 
+      width="standard"
+    ></google-plus-signin>
   </span>
-  <span ng-show="loggedIn">
+  <span ng-show="user">
     <a href="#/profile">
-      <img ng-src="{{profile.image}}" style="width: auto; height: auto; max-height: 30px"/>
+      <img ng-src="{{user.image}}" style="width: auto; height: auto; max-height: 30px"/>
     </a>
     <a href="#/profile">
-      {{profile.name}}
+      {{user.name}}
     </a>
-    <!--button ng-click="logout()">Logout</button-->
+    <a ng-click="logout()" href="#">Logout</a>
   </span>
 </div>

@@ -4,38 +4,29 @@ module.exports = function(app) {
       restrict: 'E',
       scope: {},
       link: function($scope, element, attr) {
-        $scope.loggedIn = false;
-        $scope.clientId = null;
+        $scope.user = USER;
+        $scope.clientId = CLIENT_ID;
         
         $scope.$on('event:google-plus-signin-success', function (event, authResult) {
           $http
             .post('/auth/google/callback', { code: authResult.code })
             .success(function(data) {
-              $scope.loggedIn = true;
-              $scope.profile = {
+              $scope.user = {
+                id: data.id,
                 name: data.name,
                 image: data.photoUrl
               };
             });
         });
         $scope.$on('event:google-plus-signin-failure', function (event, authResult) {
-          alert('Failed to login!');
+          $scope.user = null;
         });
-        
-        $http
-          .get('/auth/google/client-id')
-          .success(function(data) {
-            $scope.clientId = data.clientId;
-          });
-        $scope.profile = {
-          name: "Nobody",
-          image: null
-        };
+       
         $scope.logout = function() {
           $http
             .get('/logout')
             .success(function() {
-              $scope.loggedIn = false;
+              $scope.user = null;
             });
         };
       },

@@ -25,9 +25,26 @@
     <script src="app/angular-bootstrap-slider/slider.js"></script>
         
     <link href="app/style.css" rel="stylesheet"/>
+    <script>
+      var CLIENT_ID = "<%= clientId %>";
+      var USER = <% if(user) { %> {
+        id: "<%= user.id %>",
+        name: "<%= user.name %>",
+        image: "<%= user.photoUrl %>"
+      };
+      <% } else { %> 
+        null; 
+      <% } %>
+      console.log(USER);
+      window.___gcfg = {
+        lang: 'en-US',
+        isSignedOut: true
+      };
+    </script>
     <script src="app/app.js"></script>
   </head>
-  <body ng-view ng-controller="MainController">
-    
+  <body ng-controller="MainController">
+    <div ng-include="'views/header.html'"></div>
+    <div ng-view />
   </body>
 </html>

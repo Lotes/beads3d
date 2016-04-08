@@ -28,6 +28,7 @@
     "body-parser": "^1.15.0",
     "connect-mongo": "^1.1.0",
     "cookie-parser": "^1.4.0",
+    "ejs": "^2.4.1",
     "express": "^4.13.3",
     "express-chrome-logger": "^0.1.5",
     "express-session": "^1.13.0",

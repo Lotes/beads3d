@@ -23,6 +23,9 @@ io.use(function(socket, next) {
   session(socket.request, {}, next);
 });*/
 
+app.set('view engine', 'ejs');  
+app.set('views', __dirname + '/');
+
 app.use(require("express-chrome-logger"));
 
 app.use(cookieParser(Config.SESSION_SECRET));
@@ -69,14 +72,12 @@ passport.deserializeUser(function (id, done) {
 
 app.use(express.static(__dirname + '/public'));
 app.get('/', function (req, res) {
-	res.sendfile(__dirname + '/public/index.html');
-});
-
-app.get('/auth/google/client-id', function(req, res) {
-  res.json({
-    clientId: Config.GOOGLE_PLUS_CLIENT_ID
+	res.render('index', {
+    clientId: Config.GOOGLE_PLUS_CLIENT_ID,
+    user: req.user
   });
 });
+
 app.post('/auth/google/callback', passport.authenticate('google'), function(req, res) {
   res.send(req.user);
 });
