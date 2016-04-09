@@ -21,6 +21,15 @@ module.exports = function(grunt) {
         src: ['tests/server/**/*.spec.js']
       }
     },
+    mocha_istanbul: {
+      server: {
+        src: 'tests/server/**/*.spec.js',
+        options: {
+          mask: '*.spec.js',
+          timeout: 20000
+        }
+      },
+    },
     protractor: {
       options: {
         configFile: "node_modules/protractor/example/conf.js",
@@ -72,10 +81,12 @@ module.exports = function(grunt) {
   grunt.loadNpmTasks('grunt-browserify');
   grunt.loadNpmTasks('grunt-apidoc');
   grunt.loadNpmTasks('grunt-protractor-runner');
+  grunt.loadNpmTasks('grunt-mocha-istanbul')
   
   grunt.registerTask('client', ['browserify:client']);
   grunt.registerTask('test-client', ['client', 'protractor:client']);
   grunt.registerTask('test-server', ['mochaTest:server']);
+  grunt.registerTask('coverage-server', ['mocha_istanbul:server']);
   grunt.registerTask('debug', ['node-inspector:tests']);
   grunt.registerTask('doc', ['apidoc:server']);
 };

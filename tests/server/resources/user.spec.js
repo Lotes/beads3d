@@ -9,6 +9,10 @@ describe('User resource', function() {
     return User.clear();
   });
 
+  it('should not find any user', function() {
+    return User.get('xyz').should.be.fulfilledWith(null);
+  });
+  
   it('should create a new user', function() {
     var id = '1';
     var name = 'user';
