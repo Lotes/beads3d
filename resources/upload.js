@@ -47,7 +47,7 @@ var uploadMutexs = {};
 function unpack(sourceFileName, destinationFolder) {
   var deferred = Q.defer();
   var command = Config.UNPACKER_EXECUTABLE_PATH + ' "' + sourceFileName + '" "'+destinationFolder+'"';
-  var zipProcess = process.exec(command, {cwd: Config.VOXELIFY_PATH });
+  var zipProcess = process.exec(command, {cwd: Config.TOOLS_PATH });
   //handle errors
   var errorMessage = '';
   zipProcess.stdout.on('data', function(data) {
@@ -199,11 +199,9 @@ function uploadBuffer(user, name, data) {
                     })
                     .fail(function(err2) { deferre.reject(err2); });
                 });
-            }, function(err2) { deferre.reject(err2); });
+            }, function(err2) { deferred.reject(err2); });
         });
-      }, function(err) {
-        deferred.reject(err);
-      });
+      }, function(err) { deferred.reject(err); });
   });
   return deferred.promise;
 }

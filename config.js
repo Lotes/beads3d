@@ -1,6 +1,6 @@
 var path = require('path');
 
-var VOXELIFY_PATH = path.join(__dirname, 'tools', 'bin');
+var TOOLS_PATH = path.join(__dirname, 'tools', 'bin');
 
 module.exports = {
   SESSION_SECRET: 'keyboard cat',
@@ -11,10 +11,10 @@ module.exports = {
   
   UPLOADS_PATH: path.join(__dirname, 'uploads'),
   TEMP_PATH: path.join(__dirname, 'temp'),
-  MAX_SPACE_PER_USER: 10 * 1024 * 1024, //10 MiB
+  MAX_SPACE_PER_USER: 0.3 * 1024 * 1024, //0.3 MiB
   
   DEVELOPMENT_DATA_PATH: path.join(__dirname, 'development'),
-  VOXELIFY_PATH: VOXELIFY_PATH,
-  VOXELIFY_EXECUTABLE_PATH: path.join(VOXELIFY_PATH, 'voxelify'),
-  UNPACKER_EXECUTABLE_PATH: path.join(VOXELIFY_PATH, 'zip2obj')
+  TOOLS_PATH: TOOLS_PATH,
+  VOXELIFY_EXECUTABLE_PATH: path.join(TOOLS_PATH, 'voxelify'),
+  UNPACKER_EXECUTABLE_PATH: path.join(TOOLS_PATH, 'zip2obj')
 };

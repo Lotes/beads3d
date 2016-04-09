@@ -47,4 +47,21 @@ describe('Upload resource', function() {
       })
       .fail(done);
   });
+  
+  it('should fail uploading non-existing file', function() {
+    return Upload.uploadLocal(user, 'FAIL.zip')
+      .should.be.rejected();
+  });
+  
+  it('should fail uploading unacceptable file format', function() {
+    return Upload.uploadBuffer(user, 'Format.fail', '123')
+      .should.be.rejected();
+  });
+  
+  it('should fail uploading over space limit', function() {
+    var promises = [];
+    for(var index=0; index<5; index++)
+      promises.push(Upload.uploadLocal(user, modelPath));
+    return Q.all(promises).should.be.rejected();
+  });
 });
