@@ -80,4 +80,30 @@ describe('Upload resource', function() {
         ids[0].should.not.be.exactly(ids[1]);
       });
   });
+  
+  describe('with uploaded model', function() {
+    var upload;
+    beforeEach(function() {
+      return Upload.uploadLocal(user, modelPath)
+        .then(function(result) {
+          upload = result;
+        });
+    });
+    
+    it('should retrieve same upload by id', function() {
+      return Upload.get(user, upload.id)
+        .then(function(result) {
+          return result.name;
+        })
+        .should.be.fulfilledWith(upload.name);
+    });
+    
+    it('should remove upload', function() {
+      return Upload.remove(user, upload.id)
+        .then(function() {
+          return Upload.get(user, upload.id);
+        })
+        .should.be.fulfilledWith(null);
+    });
+  });
 });

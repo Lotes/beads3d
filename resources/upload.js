@@ -216,7 +216,7 @@ function uploadBuffer(user, name, data) {
 
 //uploads a local zip file
 function uploadLocal(user, zipPath) {
- var deferred = Q.defer();
+  var deferred = Q.defer();
   fse.readFile(zipPath, function(err, data) {
     if(err)
       return deferred.reject(err);
@@ -230,14 +230,43 @@ function uploadLocal(user, zipPath) {
   return deferred.promise;
 }
 
+//get an user-specific upload
+function get(user, id) {
+  var deferred = Q.defer();
+  Upload.findOne({
+    owner: user,
+    id: id
+  }, function (err, upload){
+    if(err) return deferred.reject(err);
+    deferred.resolve(upload);
+  });
+  return deferred.promise;
+}
+
+//removes an upload from database and harddisk
+function remove(user, id) {
+  var deferred = Q.defer();
+  Upload.findOneAndRemove({
+    owner: user,
+    id: id
+  }, function (err, upload){
+    if(err) return deferred.reject(err);
+    var folderPath = path.join(Config.UPLOADS_PATH, upload.folderName);
+    fse.remove(folderPath, function(err2) {
+      //ignore the error... cannot rollback
+      deferred.resolve();
+    });
+  });
+  return deferred.promise;
+}
+
 module.exports = {
   clear: clear,
   enumerate: enumerate,
   uploadLocal: uploadLocal,
   uploadBuffer: uploadBuffer,
-  
-  /*get: get,
+  get: get,
   remove: remove,
   
-  registerRoutes: registerRoutes*/
+  //registerRoutes: registerRoutes
 };
