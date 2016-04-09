@@ -71,7 +71,7 @@ function exists(path) {
       else 
         deferred.reject(err);
     } else 
-      deferred.resolfe(true);
+      deferred.resolve(true);
   });
   return deferred.promise;
 }
@@ -260,6 +260,25 @@ function remove(user, id) {
   return deferred.promise;
 }
 
+function data(user, id, trailingPath) {
+  var deferred = Q.defer();    
+  var filePath;
+  get(user, id)
+    .then(function(upload) {
+      filePath = path.join(Config.UPLOADS_PATH, upload.folderName, trailingPath);
+      return exists(filePath);
+    })
+    .then(function(ok) {
+      if(!ok) throw new Error('File does not exist!');
+      fs.readFile(filePath, function(err, data) {
+        if(err) return deferred.reject(err);
+        deferred.resolve(data);
+      });
+    })
+    .fail(function(err) { deferred.reject(err); });
+  return deferred.promise;
+}
+
 module.exports = {
   clear: clear,
   enumerate: enumerate,
@@ -267,6 +286,7 @@ module.exports = {
   uploadBuffer: uploadBuffer,
   get: get,
   remove: remove,
+  data: data,
   
   //registerRoutes: registerRoutes
 };

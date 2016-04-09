@@ -105,5 +105,15 @@ describe('Upload resource', function() {
         })
         .should.be.fulfilledWith(null);
     });
+    
+    it('should get a file', function() {
+      return Upload.data(user, upload.id, upload.files[0])
+        .should.be.fulfilled();
+    });
+    
+    it('should reject on getting non-existing file', function() {
+      return Upload.data(user, upload.id, "blubb.xyz")
+        .should.be.rejected();
+    });
   });
 });
