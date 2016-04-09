@@ -23,16 +23,11 @@ var FollowSchema = new Schema({
   following: [{ type: Schema.ObjectId, ref: TABLE_USER }]
 });
 
-/*var SessionSchema = new Schema({
-  cookie: { type: String, index: { unique: true }},
-  user: { type: Schema.ObjectId, ref: TABLE_USER },
-  createdAt: { type: Date, 'default': Date.now }
-});*/
-
 var UploadSchema = new Schema({
   owner: { type: Schema.ObjectId, ref: TABLE_USER },
-  name: { type: String },
-  folderName: { type: String },
+  id: Number, //user-relative upload id
+  name: String,
+  folderName: String,
   files: [String],
   size: Number
 });

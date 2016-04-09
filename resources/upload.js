@@ -122,15 +122,20 @@ function lockUserUpload(user, action) {
   });
 }
 
-//determines the used space of a user in bytes
-function usedSpace(user) {
+//determines the used space of a user in bytes and the next id
+function usedSpaceAndNextId(user) {
   return enumerate(user)
     .then(function(uploads) {
       var sumSize = 0;
+      var nextId = 0;
       uploads.forEach(function(upload) {
+        nextId = Math.max(nextId, upload.id);
         sumSize += upload.size;
       });
-      return sumSize;
+      return { 
+        space: sumSize,
+        nextId: nextId+1
+      };
     });
 }
 
@@ -179,14 +184,17 @@ function uploadBuffer(user, name, data) {
                   //6. check if user space limit is violated
                   if(sumSize === 0)
                     return deferred.reject(new Error('Upload was empty!'));
-                  usedSpace(user)
-                    .then(function(space) {
+                  usedSpaceAndNextId(user)
+                    .then(function(result) {
+                      var space = result.space;
+                      var nextId = result.nextId;
                       if(sumSize + space > Config.MAX_SPACE_PER_USER)
                         deferred.reject(new Error('Upload hits per user space limit!'));
                       else {
                         //7. create database entry
                         Upload.create({
                           owner: user,
+                          id: nextId,
                           name: name,
                           folderName: folderName,
                           files: files,
@@ -227,7 +235,6 @@ module.exports = {
   enumerate: enumerate,
   uploadLocal: uploadLocal,
   uploadBuffer: uploadBuffer,
-  usedSpace: usedSpace,
   
   /*get: get,
   remove: remove,

@@ -59,9 +59,25 @@ describe('Upload resource', function() {
   });
   
   it('should fail uploading over space limit', function() {
+    this.timeout(100000);
     var promises = [];
     for(var index=0; index<5; index++)
       promises.push(Upload.uploadLocal(user, modelPath));
     return Q.all(promises).should.be.rejected();
+  });
+  
+  it('should upload same file under different id', function() {
+    this.timeout(100000);
+    var promises = [
+      Upload.uploadLocal(user, modelPath),
+      Upload.uploadLocal(user, modelPath)
+    ];
+    return Q.all(promises)
+      .then(function(results) {
+        return results.map(function(result) { return result.id; });
+      })
+      .then(function(ids) {
+        ids[0].should.not.be.exactly(ids[1]);
+      });
   });
 });

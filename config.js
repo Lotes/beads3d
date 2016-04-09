@@ -11,7 +11,7 @@ module.exports = {
   
   UPLOADS_PATH: path.join(__dirname, 'uploads'),
   TEMP_PATH: path.join(__dirname, 'temp'),
-  MAX_SPACE_PER_USER: 0.3 * 1024 * 1024, //0.3 MiB
+  MAX_SPACE_PER_USER: 0.6 * 1024 * 1024, //0.3 MiB
   
   DEVELOPMENT_DATA_PATH: path.join(__dirname, 'development'),
   TOOLS_PATH: TOOLS_PATH,
