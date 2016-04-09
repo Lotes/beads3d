@@ -2,6 +2,8 @@ var Q = require('q');
 var Config = require('../config');
 var database = require('../database/index');
 var Upload = database.Upload;
+var multer = require('multer');
+var upload = multer();
 var fs = require('fs');
 var fse = require('fs-extra');
 var path = require('path');
@@ -260,6 +262,7 @@ function remove(user, id) {
   return deferred.promise;
 }
 
+//get a single upload file data
 function data(user, id, trailingPath) {
   var deferred = Q.defer();    
   var filePath;
@@ -279,6 +282,108 @@ function data(user, id, trailingPath) {
   return deferred.promise;
 }
 
+//set the application routes
+function setRoutes(app, authenticate) {
+  /**
+   * @api {post} /uploads
+   * @apiName CreateUpload
+   * @apiGroup Upload
+   * @apiDescription Uploads a zip archive containing OBJ and PNG files for current session.
+   *
+   * @apiSuccess {String} folderName
+   *
+   * @apiSuccessExample Success-Response
+   *     HTTP/1.1 200 OK
+   *     "pikachu"
+   *
+   * @apiError TypeNotAccepted file is no valid zip file
+   * @apiError SessionSpaceExceeded session space limit reached
+   */
+  app.post('/uploads', authenticate, upload.single('file'), function(req, res) {
+    uploadBuffer(req.user, req.file.originalname, req.file.buffer)
+      .then(function(upload) {
+        res.console.log('Uploading... '+ upload.id +': '+upload.folderName);
+        res.send({ id: upload.id });
+      }, function(err) {
+        res.console.log('Uploading... FAIL: '+err.message);
+        res.status(500).send(err.message);
+      });
+  });
+
+  /**
+   * @api {get} /uploads
+   * @apiName EnumerateUploads
+   * @apiGroup Upload
+   * @apiDescription Enumerates all uploaded files of a session.
+   *
+   * @apiSuccess {Object[]} files list of all files
+   * @apiSuccess {String} files.path path of a file
+   * @apiSuccess {Number} size of that file in bytes
+   *
+   * @apiSuccessExample Success-Response
+   *     HTTP/1.1 200 OK
+   *     [
+   *         {
+   *             "path": "pikachu/model.obj",
+   *             "size": 123456
+   *         },
+   *         {
+   *             "path": "pikachu/texture.png",
+   *             "size": 654321
+   *         }
+   *     ]
+   */
+  app.get('/uploads', authenticate, function(req, res) {
+    enumerate(req.user)
+      .then(function(uploads) {
+        res.console.log('Enumerating uploads... OK');
+        res.json(uploads.map(function(upload) {
+          return upload.toObject();
+        }));
+      }, function(err) {
+        res.console.log('Enumerating uploads... FAIL: '+err.message);
+        res.status(500).send(err.message);
+      });
+  });
+
+  /**
+   * @api {get} /uploads/:folder/:file*
+   * @apiName GetUploadedFile
+   * @apiGroup Upload
+   * @apiDescription Downloads a file from a session.
+   */
+  app.get(/^\/uploads\/(\d+)\/(.*)$/, authenticate, function(req, res) {
+    var folder = parseInt(req.params[0], 10);
+    var path = req.params[1];
+    get(req.user, folder, path)
+      .then(function(data) {
+        res.console.log('Downloading uploaded file "'+folder+'/'+path+'"... OK');
+        res.send(data);
+      }, function(err) {
+        res.console.log('Downloading uploaded file "'+folder+'/'+path+'"... FAIL: '+err.message);
+        res.status(500).send(err.message);
+      });
+  });
+
+  /**
+   * @api {delete} /uploads/:folder
+   * @apiName DeleteUpload
+   * @apiGroup Upload
+   * @apiDescription Deletes an upload from a session.
+   */
+  app['delete']('/uploads/:id', authenticate, function(req, res) {
+    var id = parseInt(req.params.id, 10);
+    remove(req.user, id)
+      .then(function() {
+        res.console.log('Deleting upload "'+id+'"... OK');
+        res.end();
+      }, function(err) {
+        res.console.log('Deleting upload "'+id+'"... FAIL: '+err.message);
+        res.status(500).send(err.message);
+      });
+  });
+}
+
 module.exports = {
   clear: clear,
   enumerate: enumerate,
@@ -288,5 +393,5 @@ module.exports = {
   remove: remove,
   data: data,
   
-  //registerRoutes: registerRoutes
+  setRoutes: setRoutes
 };

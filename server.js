@@ -12,6 +12,7 @@ var bodyParser = require('body-parser');
 var ioCookieParser = require('socket.io-cookie-parser');
 var database = require('./database/index');
 var User = require('./resources/user');
+var Upload = require('./resources/upload');
 var Config = require('./config');
 var path = require('path');
 var Q = require('q');
@@ -88,9 +89,14 @@ app.get('/logout', function(req, res) {
   });
 });
 
-/*Upload.setup(app);
+Upload.setRoutes(app, function(req, res, next) {
+  if(!req.isAuthenticated())
+    res.status(401).end();
+  else
+    next();
+});
 
-io.sockets.on('connection', function (socket) {
+/*io.sockets.on('connection', function (socket) {
 
 });
 
