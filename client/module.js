@@ -5,6 +5,7 @@ require('./bootstrap')(app);
 require('./services/Upload')(app);
 require('./services/Loader')(app);
 require('./services/Socket')(app);
+require('./services/Auth')(app);
 
 require('./controllers/MainController')(app);
 require('./controllers/ImportController')(app);

@@ -7,7 +7,7 @@ Ideas
  * [ ] PDF export
  * [ ] Travis-CI
  * [ ] OpenShift script
- * [ ] Passport for Google/Local
+ * [X] Passport for Google
  * [ ] URL upload
  * save voxel output packed as PNG files + JSON description
 

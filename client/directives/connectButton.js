@@ -1,10 +1,10 @@
 module.exports = function(app) {
-  app.directive('connectButton', function($http) {
+  app.directive('connectButton', function($http, $location, Auth) {
     return {
       restrict: 'E',
       scope: {},
       link: function($scope, element, attr) {
-        $scope.user = USER;
+        $scope.user = Auth.getUser();
         $scope.clientId = CLIENT_ID;
         
         $scope.$on('event:google-plus-signin-success', function (event, authResult) {
@@ -16,6 +16,7 @@ module.exports = function(app) {
                 name: data.name,
                 image: data.photoUrl
               };
+              Auth.setUser($scope.user);
             });
         });
         $scope.$on('event:google-plus-signin-failure', function (event, authResult) {
@@ -27,6 +28,8 @@ module.exports = function(app) {
             .get('/logout')
             .success(function() {
               $scope.user = null;
+              Auth.setUser(null);
+              $location.path('/');
             });
         };
       },

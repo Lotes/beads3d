@@ -10,4 +10,4 @@ module.exports = function(app) {
       return $http['delete']('/uploads/'+encodeURI(name));
     };
   });
-}
+};
