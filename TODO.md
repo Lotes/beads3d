@@ -20,14 +20,15 @@ Server
 ------
  * more RESTful web API
    * resources
-     * uploads
-     * sessions?
-     * users
-       * followers
-     * models (3D images)
-       * stars
-       * forks
-       * owner
+     * [ ] uploads
+     * [X] sessions
+     * [X] users
+       * [ ] followers
+       * [ ] stars
+     * [ ] models (3D images)
+       * [ ] stars
+       * [ ] forks
+       * [ ] owner
        * 2 types
-         * voxels
-         * layers
+         * [ ] voxels
+         * [ ] layers

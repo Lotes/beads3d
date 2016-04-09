@@ -32,10 +32,9 @@ var FollowSchema = new Schema({
 var UploadSchema = new Schema({
   owner: { type: Schema.ObjectId, ref: TABLE_USER },
   name: { type: String },
-  files: [{
-    location: String,
-    size: Number
-  }]
+  folderName: { type: String },
+  files: [String],
+  size: Number
 });
 
 var ModelSchema = new Schema({

@@ -4,16 +4,16 @@ var VOXELIFY_PATH = path.join(__dirname, 'tools', 'bin');
 
 module.exports = {
   SESSION_SECRET: 'keyboard cat',
-  SESSION_MAX_AGE: 24 * 60 * 60 * 1000, //one day
+  SESSION_MAX_AGE: 365 * 24 * 60 * 60 * 1000, //one year
   
   GOOGLE_PLUS_CLIENT_ID: process.env.GOOGLE_PLUS_CLIENT_ID,
   GOOGLE_PLUS_CLIENT_SECRET: process.env.GOOGLE_PLUS_CLIENT_SECRET,
   
-  DEVELOPMENT_SESSION: 'development',
-  DEVELOPMENT_DATA_PATH: path.join(__dirname, 'development'),
-  SESSIONS_PATH: path.join(__dirname, 'sessions'),
+  UPLOADS_PATH: path.join(__dirname, 'uploads'),
   TEMP_PATH: path.join(__dirname, 'temp'),
-  MAX_SPACE_PER_SESSION: 10*1024*1024,
+  MAX_SPACE_PER_USER: 10 * 1024 * 1024, //10 MiB
+  
+  DEVELOPMENT_DATA_PATH: path.join(__dirname, 'development'),
   VOXELIFY_PATH: VOXELIFY_PATH,
   VOXELIFY_EXECUTABLE_PATH: path.join(VOXELIFY_PATH, 'voxelify'),
   UNPACKER_EXECUTABLE_PATH: path.join(VOXELIFY_PATH, 'zip2obj')
