@@ -15,6 +15,39 @@ module.exports = function(config) {
 
     // list of files / patterns to load in the browser
     files: [
+      'public/bower_components/jquery/dist/jquery.min.js',
+      
+      'public/bower_components/angular/angular.min.js',
+      'public/bower_components/angular-mocks/angular-mocks.js',
+      
+      'public/bower_components/bootstrap/dist/js/bootstrap.min.js',
+      'public/bower_components/three.js/three.min.js',
+      'public/bower_components/angular-route/angular-route.min.js',
+      'public/bower_components/angular-wizard/dist/angular-wizard.min.js',
+      'public/bower_components/angular-directive.g-signin/google-plus-signin.js',
+      'public/bower_components/seiyria-bootstrap-slider/dist/bootstrap-slider.min.js',
+      'public/bower_components/socket.io-client/socket.io.js',
+      
+      'public/utils/MTLLoader.js',
+      'public/utils/OBJMTLLoader.js',
+      'public/utils/OrbitControls.js',
+      'public/utils/angular-bootstrap-slider/slider.js',
+      
+      'public/app/module.js',
+      'public/app/bootstrap.js',
+      'public/app/controllers/BeadifyController.js',
+      'public/app/controllers/ImportController.js',
+      'public/app/controllers/MainController.js',
+      'public/app/controllers/SearchController.js',
+      'public/app/directives/connectButton.js',
+      'public/app/directives/fileModel.js',
+      'public/app/directives/viewer.js',
+      'public/app/filters/bytes.js',
+      'public/app/services/Auth.js',
+      'public/app/services/Loader.js',
+      'public/app/services/Upload.js',
+      'public/app/services/Socket.js',
+      
       'tests/client/**/*.spec.js'
     ],
 
@@ -27,7 +60,7 @@ module.exports = function(config) {
     // preprocess matching files before serving them to the browser
     // available preprocessors: https://npmjs.org/browse/keyword/karma-preprocessor
     preprocessors: {
-      'public/app/app.js': ['coverage']
+      'public/app/**/*.js': ['coverage']
     },
 
 

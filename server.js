@@ -32,7 +32,6 @@ app.use(require("express-chrome-logger"));
 
 app.use(cookieParser(Config.SESSION_SECRET));
 app.use(bodyParser.json());
-//app.use(bodyParser.urlencoded({ extended: false }));
 app.use(session({
   secret: Config.SESSION_SECRET,
   saveUninitialized: false,
