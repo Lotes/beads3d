@@ -1,0 +1,55 @@
+<div>
+  <script type="text/ng-template" id="tree.html">
+    <div>
+      <span ng-click="(node.type != 'file' && toggleNode(node))" class="tree-item">
+        <span 
+          ng-if="node.type != 'file'" 
+          ng-class="{ glyphicon: true, 'glyphicon-folder-open': node.expanded,  'glyphicon-folder-close': !node.expanded }"
+        />
+        {{node.name}}
+        <span class="badge" ng-if="node.type == 'upload'">{{node.size | bytes}}</span>
+      </span>
+      <button
+        class="btn btn-danger tree-item-button"
+        ng-if="node.type == 'upload'"
+        ng-click="tryRemoveUpload(node.id)" 
+        title="Remove"
+      >
+        <span class="glyphicon glyphicon-trash"/>
+      </button>
+    </div>
+    <ol class="tree list-group" ng-show="node.type != 'file' && node.expanded">
+      <li 
+        class="list-group-item" 
+        ng-click="node.type == 'file' && selectNode(node)"
+        ng-class="{ active: node.type == 'file' && isNodeSelected(node) }"
+        ng-repeat="node in node.children" ui-tree-node 
+        ng-include="'tree.html'">
+      </li>
+    </ol>
+  </script>
+  
+  <div>
+    <ol class="tree list-group">
+      <li class="list-group-item" ng-repeat="node in uploadNodes" ui-tree-node ng-include="'tree.html'"></li>
+    </ol>
+  </div>
+  
+  <div class="removeDialog modal fade" tabindex="-1" role="dialog">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+          <h4 class="modal-title">Deletion</h4>
+        </div>
+        <div class="modal-body">
+          <p>Do you really want to delete this model?</p>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-primary" ng-click="removeUpload()">Yes</button>
+          <button type="button" class="btn btn-default" data-dismiss="modal">No</button>
+        </div>
+      </div><!-- /.modal-content -->
+    </div><!-- /.modal-dialog -->
+  </div><!-- /.modal -->
+</div>

@@ -34,7 +34,8 @@ module.exports = function(config) {
       'public/utils/angular-bootstrap-slider/slider.js',
       
       'public/app/module.js',
-      'public/app/bootstrap.js',
+      'public/app/**/*.js',
+      /*'public/app/bootstrap.js',
       'public/app/controllers/BeadifyController.js',
       'public/app/controllers/ImportController.js',
       'public/app/controllers/MainController.js',
@@ -46,7 +47,7 @@ module.exports = function(config) {
       'public/app/services/Auth.js',
       'public/app/services/Loader.js',
       'public/app/services/Upload.js',
-      'public/app/services/Socket.js',
+      'public/app/services/Socket.js',*/
       
       'tests/client/**/*.spec.js'
     ],

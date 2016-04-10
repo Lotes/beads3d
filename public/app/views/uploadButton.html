@@ -1,0 +1,12 @@
+<span>
+  <!-- this form cannot be embedded in button. That would lead to an auto-click-event -->
+  <form class="uploadForm" style="display: none">
+    <input class="uploadButton" type="file" file-model="uploadFile" accept="{{filter}}"/>
+  </form>
+  <button class="btn btn-default" ng-click="upload()" title="Upload" ng-disabled="uploading">
+    <span ng-hide="uploading"><span class="glyphicon glyphicon-upload"/> UPLOAD</span>
+    <div class="progress" ng-hide="!uploading" style="width: 50px; margin: 0;">
+      <div class="progress-bar" role="progressbar" ng-style="{ width: uploadProgress+'%' }"></div>
+    </div>
+  </button>
+</span>

@@ -5,7 +5,7 @@ angular.module('beads3d').service('Upload', function($http) {
   this.enumerate = function() {
     return $http.get('/uploads');
   };
-  this.remove = function(name) {
-    return $http['delete']('/uploads/'+encodeURI(name));
+  this.remove = function(id) {
+    return $http['delete']('/uploads/'+id);
   };
 });
