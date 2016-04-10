@@ -69,6 +69,7 @@ THREE.OBJMTLLoader.prototype = {
       var materialLibraries = {};
       var object = scope.parse(text, function(materialLibraryName) {
         materialsFoundCount++;
+        materialLibraryName = materialLibraryName.replace(/\\/g, '/');
         var mtlurl = baseUrl + materialLibraryName;
         var mtlLoader = new THREE.MTLLoader(scope.manager);
         mtlLoader.setBaseUrl(baseUrl);

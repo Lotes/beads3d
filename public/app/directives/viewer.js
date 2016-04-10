@@ -93,7 +93,6 @@ angular.module('beads3d').directive('viewer', function() {
         if(oldValue) {
           scene.remove(oldValue);	
         }
-        
         if(newValue) {
           scene.add(newValue);
           

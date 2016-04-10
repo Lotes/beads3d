@@ -10,6 +10,7 @@ var path = require('path');
 var locks = require('locks');
 var randomString = require('./randomString');
 var process = require('child_process');
+var mime = require('mime');
 
 //clears all files, folders and database entries
 //TODO dont forget to erase stars
@@ -355,10 +356,11 @@ function setRoutes(app, authenticate) {
   app.get(/^\/uploads\/(\d+)\/(.*)$/, authenticate, function(req, res) {
     var folder = parseInt(req.params[0], 10);
     var path = req.params[1];
-    get(req.user, folder, path)
+    data(req.user, folder, path)
       .then(function(data) {
+        res.setHeader("Content-Type", mime.lookup(path));
         res.console.log('Downloading uploaded file "'+folder+'/'+path+'"... OK');
-        res.send(data);
+        res.end(data);
       }, function(err) {
         res.console.log('Downloading uploaded file "'+folder+'/'+path+'"... FAIL: '+err.message);
         res.status(500).send(err.message);

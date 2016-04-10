@@ -16,12 +16,12 @@
       <uploads-tree uploads="uploads" selected-file="selection"></uploads-tree>
 
       <button class="btn btn-default" ng-click="back()">Back</button>
-      <button class="btn btn-success" ng-click="next()" ng-disabled="selection.model == null">
+      <button class="btn btn-success" ng-click="next()" ng-disabled="model == null">
         NEXT
       </button>
     </div>
     <div class="col-sm-6 fill">
-      <viewer object="selection.model3D"></viewer>
+      <viewer object="model"></viewer>
     </div>
   </div>
 </div>

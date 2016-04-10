@@ -397,7 +397,8 @@ THREE.MTLLoader.MaterialCreator.prototype = {
 
 
 	loadTexture: function ( url, mapping, onLoad, onProgress, onError ) {
-
+    url = url.replace(/\\/g, '/');
+  
 		var texture;
 		var loader = THREE.Loader.Handlers.get( url );
 		var manager = ( this.manager !== undefined ) ? this.manager : THREE.DefaultLoadingManager;
