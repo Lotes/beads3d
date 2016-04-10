@@ -4,12 +4,6 @@ var path = require('path');
 
 module.exports = function(grunt) {
   grunt.initConfig({
-    watch: {
-      client: {
-        files: ['client/**/*.js'],
-        tasks: ['client']
-      }
-    },
     mochaTest: {
       server: {
         options: {
@@ -21,12 +15,18 @@ module.exports = function(grunt) {
         src: ['tests/server/**/*.spec.js']
       }
     },
+    karma: {
+      client: {
+        configFile: 'karma.conf.js'
+      }
+    },
     mocha_istanbul: {
       server: {
         src: 'tests/server/**/*.spec.js',
         options: {
           mask: '*.spec.js',
-          timeout: 20000
+          timeout: 20000,
+          coverageFolder: 'coverage/server'
         }
       },
     },
@@ -44,13 +44,6 @@ module.exports = function(grunt) {
           args: {}
         }
       },
-    },
-    browserify: {
-    	client: {
-    		  	files: {
-    	    		'public/app/app.js': ['client/**/*.js']
-    	    	}
-    	}
     },
     apidoc: {
       server: {
@@ -78,15 +71,16 @@ module.exports = function(grunt) {
   grunt.loadNpmTasks('grunt-contrib-watch');
   grunt.loadNpmTasks('grunt-mocha-test');
   grunt.loadNpmTasks('grunt-node-inspector');
-  grunt.loadNpmTasks('grunt-browserify');
   grunt.loadNpmTasks('grunt-apidoc');
   grunt.loadNpmTasks('grunt-protractor-runner');
-  grunt.loadNpmTasks('grunt-mocha-istanbul')
+  grunt.loadNpmTasks('grunt-mocha-istanbul');
+  grunt.loadNpmTasks('grunt-karma');
   
-  grunt.registerTask('client', ['browserify:client']);
-  grunt.registerTask('test-client', ['client', 'protractor:client']);
+  grunt.registerTask('test-e2e', ['protractor:client']);
+  grunt.registerTask('test-client', ['karma:client']);
   grunt.registerTask('test-server', ['mochaTest:server']);
   grunt.registerTask('coverage-server', ['mocha_istanbul:server']);
+  grunt.registerTask('test', ['test-server', 'test-client', 'test-e2e']);
   grunt.registerTask('debug', ['node-inspector:tests']);
   grunt.registerTask('doc', ['apidoc:server']);
 };

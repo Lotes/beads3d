@@ -14,17 +14,15 @@
     <link href="bower_components/angular-wizard/dist/angular-wizard.min.css" rel="stylesheet"/>
     <script src="bower_components/angular-wizard/dist/angular-wizard.min.js"></script>
     <script src="bower_components/angular-directive.g-signin/google-plus-signin.js"></script>
-    
-    <script src="app/MTLLoader.js"></script>
-    <script src="app/OBJMTLLoader.js"></script>
-    <script src="app/OrbitControls.js"></script>
-    <script src="bower_components/socket.io-client/socket.io.js"></script>
-	
     <link href="bower_components/seiyria-bootstrap-slider/dist/css/bootstrap-slider.min.css" rel="stylesheet"/>
     <script src="bower_components/seiyria-bootstrap-slider/dist/bootstrap-slider.min.js"></script>
-    <script src="app/angular-bootstrap-slider/slider.js"></script>
-        
-    <link href="app/style.css" rel="stylesheet"/>
+    <script src="bower_components/socket.io-client/socket.io.js"></script>
+
+    <script src="utils/MTLLoader.js"></script>
+    <script src="utils/OBJMTLLoader.js"></script>
+    <script src="utils/OrbitControls.js"></script>
+    <script src="utils/angular-bootstrap-slider/slider.js"></script>
+
     <script>
       var CLIENT_ID = "<%= clientId %>";
       var USER = <% if(user) { %> {
@@ -41,10 +39,17 @@
         isSignedOut: true
       };
     </script>
-    <script src="app/app.js"></script>
+    
+    <!-- angluar application -->
+    <% scripts.forEach(function(script) { %>
+    <script src="app/<%= script %>"></script>
+    <% }); %>
+    <% styles.forEach(function(style) { %>
+    <link href="app/<%= style %>" rel="stylesheet"/>
+    <% }); %>
   </head>
   <body ng-controller="MainController">
-    <div ng-include="'views/header.html'"></div>
+    <div ng-include="'app/views/header.html'"></div>
     <div ng-view />
   </body>
 </html>

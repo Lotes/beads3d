@@ -16,6 +16,7 @@ var Upload = require('./resources/upload');
 var Config = require('./config');
 var path = require('path');
 var Q = require('q');
+var fse = require('fs-extra');
 
 server.listen(8080);
 
@@ -73,10 +74,27 @@ passport.deserializeUser(function (id, done) {
 
 app.use(express.static(__dirname + '/public'));
 app.get('/', function (req, res) {
-	res.render('index', {
-    clientId: Config.GOOGLE_PLUS_CLIENT_ID,
-    user: req.user
-  });
+  var firstScript = 'module.js';
+  var appPath = path.join(__dirname, 'public', 'app');
+  var scripts = [];
+  var styles = [];
+  fse.walk(appPath)
+    .on('data', function(item) {
+      var shortPath = item.path.substring(appPath.length+1).replace(/\\/g, '/'); 
+      if(/\.js$/i.test(shortPath)) {
+        if(shortPath !== firstScript)
+          scripts.push(shortPath);
+      } else if(/\.css$/i.test(shortPath))
+        styles.push(shortPath);
+    })
+    .on('end', function() {
+      res.render('index', {
+        clientId: Config.GOOGLE_PLUS_CLIENT_ID,
+        user: req.user,
+        scripts: [firstScript].concat(scripts),
+        styles: styles
+      });
+    });
 });
 
 app.post('/auth/google/callback', passport.authenticate('google'), function(req, res) {

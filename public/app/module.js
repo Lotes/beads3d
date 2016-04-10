@@ -1,0 +1,1 @@
+angular.module('beads3d', ['ui.bootstrap-slider', 'ngRoute', 'mgo-angular-wizard', 'directive.g+signin']);
