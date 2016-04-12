@@ -28,6 +28,7 @@
     "angular-wizard": "~0.6.1",
     "angular-ui-tree": "~2.13.0",
     "angular-directive.g-signin": "~0.1.2",
-    "angular-mocks": "~1.5.3"
+    "angular-mocks": "~1.5.3",
+    "angular-spinner": "~0.8.1"
   }
 }

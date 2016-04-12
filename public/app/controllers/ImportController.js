@@ -3,6 +3,7 @@ angular.module('beads3d').controller('ImportController', function($scope, Upload
     alert(message); //TODO beautify dialog
   };
   $scope.selection = null;
+  $scope.modelIsLoading = false;
   $scope.model = null;
   $scope.uploads = [];
   $scope.refresh = function() {
@@ -14,6 +15,7 @@ angular.module('beads3d').controller('ImportController', function($scope, Upload
     $scope.model = null;
     if($scope.selection === null)
       return;
+    $scope.modelIsLoading = true;
     Loader.loadOBJ('/uploads/'+$scope.selection.id+'/'+$scope.selection.path)
       .then(function(obj) {
         $scope.model = new THREE.Object3D();
@@ -22,6 +24,7 @@ angular.module('beads3d').controller('ImportController', function($scope, Upload
         var size = bbox.size();
         var scale = 1/Math.max(size.x, size.y, size.z);
         $scope.model.scale.set(scale, scale, scale);
+        $scope.modelIsLoading = false;
       });
   });
   
