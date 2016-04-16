@@ -27,6 +27,8 @@ module.exports = function(config) {
       'public/bower_components/angular-directive.g-signin/google-plus-signin.js',
       'public/bower_components/seiyria-bootstrap-slider/dist/bootstrap-slider.min.js',
       'public/bower_components/socket.io-client/socket.io.js',
+      'public/bower_components/spin.js/spin.js',
+      'public/bower_components/angular-spinner/angular-spinner.js',
       
       'public/utils/MTLLoader.js',
       'public/utils/OBJMTLLoader.js',

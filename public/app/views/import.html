@@ -21,8 +21,7 @@
       </button>
     </div>
     <div class="col-sm-6 fill">
-      <span us-spinner ng-if="modelIsLoading"></span>
-      <viewer object="model" ng-show="!modelIsLoading"></viewer>
+      <viewer object="model" is-loading="modelIsLoading"></viewer>
     </div>
   </div>
 </div>

@@ -14,7 +14,7 @@ angular.module('beads3d').controller('BeadifyController', function($scope, $loca
       loader.model.scale.set(scale, scale, scale);
       updateTransformerScene();
     });
-  Loader.loadOBJ('/app/invertedCube.obj')
+  Loader.loadOBJ('/utils/invertedCube.obj')
     .then(function(obj) {
       var container = new THREE.Object3D();
       var geometry = obj.geometry;

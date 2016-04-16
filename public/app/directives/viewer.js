@@ -4,7 +4,8 @@ angular.module('beads3d').directive('viewer', function() {
     scope: {
       'object': '=',
       'rotation': '=',
-      'mode': '='
+      'mode': '=',
+      'isLoading': '='
     },
     link: function(scope, element, attr) {
       var camera, scene, renderer, controls, div;
@@ -20,6 +21,7 @@ angular.module('beads3d').directive('viewer', function() {
       }
     
       function onWindowResize() {
+        console.log(div.clientWidth, div.clientHeight);
         camera.aspect = div.clientWidth / div.clientHeight;
         camera.updateProjectionMatrix();
         renderer.setSize(div.clientWidth, div.clientHeight);
@@ -106,6 +108,6 @@ angular.module('beads3d').directive('viewer', function() {
       });
     },
     replace: true,
-    template: '<div class="viewer"/>'
+    template: '<div class="viewer"><span us-spinner ng-if="isLoading"></span></div>'
   };
 });
