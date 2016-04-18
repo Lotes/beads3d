@@ -1,4 +1,12 @@
 <wizard on-finish="next()" hide-indicators="true" template="app/views/wizard.html"> 
+  <wz-step title="demo">
+    <threejs-control is-loading="false">
+      <threejs-layer>
+        <threejs-sphere position="pos" scale="sca"></threejs-sphere>
+      </threejs-layer>
+    </threejs-control>
+  </wz-step>
+  
   <wz-step title="position">
     <div class="container-fixed fill">
       <div class="row fill">        

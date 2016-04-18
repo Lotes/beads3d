@@ -21,7 +21,6 @@ angular.module('beads3d').directive('viewer', function() {
       }
     
       function onWindowResize() {
-        console.log(div.clientWidth, div.clientHeight);
         camera.aspect = div.clientWidth / div.clientHeight;
         camera.updateProjectionMatrix();
         renderer.setSize(div.clientWidth, div.clientHeight);
@@ -38,8 +37,30 @@ angular.module('beads3d').directive('viewer', function() {
       directionalLight.position.set(2, 0.5, 0);
       scene.add(directionalLight);
 
+      var geometry = new THREE.SphereGeometry(1.2, 20, 20);
+      var material = new THREE.MeshBasicMaterial({
+        color: 0xff0000, 
+        transparent: true, 
+        opacity: 0.05,
+        depthWrite: false
+      });
+      var sphere = new THREE.Mesh(geometry, material);
+      scene.add(sphere);
+      
+      var geometry2 = new THREE.SphereGeometry(1, 20, 20);
+      var material2 = new THREE.MeshBasicMaterial({
+        color: 0x0000ff, 
+        transparent: true, 
+        opacity: 0.05,
+        depthWrite: false
+      });
+      var sphere2 = new THREE.Mesh(geometry2, material2);
+      scene.add(sphere2);
+      
       //renderer
-      renderer = new THREE.WebGLRenderer();
+      renderer = new THREE.WebGLRenderer({
+        alpha: true
+      });
       renderer.setPixelRatio(div.devicePixelRatio);
       renderer.setClearColor(0xffffff, 1);
       onWindowResize();
@@ -99,6 +120,9 @@ angular.module('beads3d').directive('viewer', function() {
           scene.add(newValue);
           
           var bbox = new THREE.Box3().setFromObject(newValue);
+          var radius = bbox.max.clone().sub(bbox.min).length() / 2;
+          sphere.scale.set(radius, radius, radius);
+          sphere2.scale.set(radius, radius, radius);
           newValue.position.set(
             -(bbox.min.x + bbox.max.x)/2,
             -(bbox.min.y + bbox.max.y)/2,

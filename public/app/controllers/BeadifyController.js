@@ -1,4 +1,15 @@
-angular.module('beads3d').controller('BeadifyController', function($scope, $location, $routeParams, Loader, Upload, Socket) {    
+angular.module('beads3d').controller('BeadifyController', function($scope, $location, $routeParams, Loader, Upload, Socket, $interval) {    
+  $scope.pos = new THREE.Vector3();
+  $scope.sca = new THREE.Vector3();
+  var R = 2;
+  var alpha = 0;
+  $interval(function() {
+    alpha += 1 * Math.PI / 180;
+    var sin = Math.sin(alpha);
+    $scope.pos = new THREE.Vector3(R * Math.cos(alpha), 0, R*sin);
+    $scope.sca = new THREE.Vector3(sin, sin, sin);
+  }, 50);
+  
   var modelName = $routeParams.model;
   var loader = {
     model: new THREE.Object3D(),
