@@ -4,19 +4,48 @@ angular.module('beads3d').directive('threejsSphere', function() {
     scope: {
       position: '=?',
       scale: '=?',
-      rotation: '=?'
+      rotation: '=?',
+      radius: '=?',
+      segments: '=?',
+      color: '=?',
+      opacity: '=?',
+      depthWrite: '=?'
     },
     require: ['?^threejsGroup', '?^threejsLayer'],
     controller: function($scope) {
-      var geometry = new THREE.SphereGeometry(1, 20, 20);
-      var material = new THREE.MeshBasicMaterial({
-        color: 0x0000ff, 
-        transparent: true, 
-        opacity: 1,
-        depthWrite: true
+      if($scope.radius === undefined) $scope.radius = 1;
+      if($scope.segments === undefined) $scope.segments = 20;
+      if($scope.color === undefined) $scope.color = 0xffffff;
+      if($scope.opacity === undefined) $scope.opacity = 1;
+      if($scope.depthWrite === undefined) $scope.depthWrite = true;
+      $scope.geometry = new THREE.SphereGeometry($scope.radius, $scope.segments, $scope.segments);
+      $scope.material = new THREE.MeshBasicMaterial({
+        color: $scope.color, 
+        transparent: $scope.opacity < 1, 
+        opacity: $scope.opacity,
+        depthWrite: $scope.depthWrite
       });
-      $scope.sphere = new THREE.Mesh(geometry, material);
-      
+      $scope.sphere = new THREE.Mesh($scope.geometry, $scope.material);
+      //geometry
+      ['segments', 'radius'].forEach(function(element) {
+        $scope.$watch(element, function() {
+          $scope.geometry = new THREE.SphereGeometry($scope.radius, $scope.segments, $scope.segments);
+          $scope.sphere.geometry = $scope.geometry;
+        });
+      });
+      //material
+      ['color', 'opacity', 'depthWrite'].forEach(function(element) {
+        $scope.$watch(element, function() {
+          $scope.material = new THREE.MeshBasicMaterial({
+            color: $scope.color, 
+            transparent: $scope.opacity < 1, 
+            opacity: $scope.opacity,
+            depthWrite: $scope.depthWrite
+          });
+          $scope.sphere.material = $scope.material;
+        });
+      });
+      //sphere
       ['position', 'scale'].forEach(function(element) {
         $scope.$watch(element, function(newValue) {
           if(newValue)

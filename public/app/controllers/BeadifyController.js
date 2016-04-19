@@ -23,6 +23,7 @@ angular.module('beads3d').controller('BeadifyController', function($scope, $loca
       var size = bbox.size();
       var scale = 1/Math.max(size.x, size.y, size.z);
       loader.model.scale.set(scale, scale, scale);
+      $scope.mmmodel = obj;
       updateTransformerScene();
     });
   Loader.loadOBJ('/utils/invertedCube.obj')

@@ -41,6 +41,10 @@ angular.module('beads3d').config(function($routeProvider, $locationProvider) {
     });
 })
 .run(function($rootScope, $location, Auth) {
+  $rootScope.rgb = function(r, g, b) {
+    return ((r & 0xFF) << 16) | ((g & 0xFF) << 8) | (b & 0xFF);
+  };
+
   $rootScope.$on('$routeChangeStart', function (event, next, current) {
     if(next.$$route.authenticated && Auth.getUser() == null) {
       event.preventDefault();
