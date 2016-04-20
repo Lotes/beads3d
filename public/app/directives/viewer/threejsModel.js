@@ -9,12 +9,12 @@ angular.module('beads3d').directive('threejsModel', function() {
     },
     require: ['?^threejsGroup', '?^threejsLayer'],
     controller: function($scope) {
-      if($scope.position === undefined) $scope.position = new THREE.Vector3(0, 0, 0);
-      if($scope.scale === undefined) $scope.scale = new THREE.Vector3(1, 1, 1);
-      if($scope.rotation === undefined) $scope.rotation = new THREE.Euler(0, 0, 0, 'XYZ');
       $scope.wrapper = new THREE.Object3D();
     },
     link: function($scope, element, attr, parentCtrls) {
+      if($scope.position == undefined) $scope.position = new THREE.Vector3(0, 0, 0);
+      if($scope.scale == undefined) $scope.scale = new THREE.Vector3(1, 1, 1);
+      if($scope.rotation == undefined) $scope.rotation = new THREE.Euler(0, 0, 0, 'XYZ');
       var parentCtrl = parentCtrls[0] || parentCtrls[1];
       parentCtrl.addObject($scope.wrapper);
       $scope.$on('$destroy', function() { parentCtrl.removeObject($scope.wrapper); });

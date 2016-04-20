@@ -6,11 +6,11 @@ angular.module('beads3d').directive('threejsGroup', function() {
       scale: '=?',
       rotation: '=?'
     },
-    require: ['?^threejsGroup', '?^threejsLayer'],
+    require: ['?^^threejsGroup', '?^threejsLayer'],
     controller: function($scope) {
       $scope.group = new THREE.Object3D();
-      this.addObject = function(obj) { $scope.scene.add(obj); };
-      this.removeObject = function(obj) { $scope.scene.remove(obj); };
+      this.addObject = function(obj) { $scope.group.add(obj); };
+      this.removeObject = function(obj) { $scope.group.remove(obj); };
       
       ['position', 'scale'].forEach(function(element) {
         $scope.$watch(element, function(newValue) {
