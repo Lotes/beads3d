@@ -2,6 +2,8 @@ angular.module('beads3d').controller('BeadifyController', function($scope, $loca
   $scope.pos = new THREE.Vector3();
   $scope.sca = new THREE.Vector3();
   $scope.rot = new THREE.Euler(0, 0, 0, 'XYZ');
+  $scope.camstart = new THREE.Vector3(0,1,0);
+  $scope.camend = new THREE.Vector3(0,1,0);
   $scope.mmmodelpos = new THREE.Vector3(0,0,0);
   $scope.mmmodelsca = new THREE.Vector3(1,1,1);
   var R = 2;

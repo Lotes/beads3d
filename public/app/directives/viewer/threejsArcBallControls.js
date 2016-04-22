@@ -1,8 +1,10 @@
-angular.module('beads3d').directive('threejsArcBallControls', function() {
+angular.module('beads3d').directive('threejsArcBallControls', function($rootScope) {
   return {
     restrict: 'E',
     scope: {
-      rotation: '=?'
+      rotation: '=?',
+      start: '=?',
+      end: '=?'
     },
     require: '^threejsControl',
     controller: function($scope) {
@@ -39,20 +41,33 @@ angular.module('beads3d').directive('threejsArcBallControls', function() {
       };
       var state = States.CAMERA;
       var startConfig;
-      function getIntersections(x, y) {
-        var mouse = new THREE.Vector2();
-        mouse.x = ( x / parentCtrl.getWidth() ) * 2 - 1;
-        mouse.y = - ( y / parentCtrl.getHeight() ) * 2 + 1;	
+      function getMousePosition(event) {
+        if(/touch/i.test(event.type))
+          return new THREE.Vector2(
+            event.touches[0].clientX - parentCtrl.getLeft(),
+            event.touches[0].clientY - parentCtrl.getTop()
+          );
+        else
+          return new THREE.Vector2(
+            event.clientX - parentCtrl.getLeft(),
+            event.clientY - parentCtrl.getTop()
+          );
+      }
+      function getIntersections(event) {
+        var mouse = getMousePosition(event);
+        mouse.x = ( mouse.x / parentCtrl.getWidth() ) * 2 - 1;
+        mouse.y = - ( mouse.y / parentCtrl.getHeight() ) * 2 + 1;	
         raycaster.setFromCamera(mouse, parentCtrl.getCamera());	
         return raycaster.intersectObjects([inner, outer]);
       }
       function touchStart(event) {
+        console.log(event);
         pressed = true;
         var intersection;
-        var intersections = getIntersections(event.clientX, event.clientY);
+        var intersections = getIntersections(event);
         var inners = intersections.filter(function(x) { return x.object === inner; });
         var outers = intersections.filter(function(x) { return x.object === outer; });
-        var mouse = new THREE.Vector2(event.clientX, event.clientY);
+        var mouse = getMousePosition(event);
         if(inners.length > 0) {
           state = States.ARCBALL;
           intersection = inners[0];
@@ -85,6 +100,7 @@ angular.module('beads3d').directive('threejsArcBallControls', function() {
       function touchMove(event) {
         if(!pressed)
           return;
+        event.preventDefault();
         /*function toScreenPosition(vector) { //vector: THREE.Vector3
           var widthHalf = 0.5 * parentCtrl.getWidth();
           var heightHalf = 0.5 * parentCtrl.getHeight();
@@ -93,16 +109,17 @@ angular.module('beads3d').directive('threejsArcBallControls', function() {
           vector.y = - ( vector.y * heightHalf ) + heightHalf;
           return new THREE.Vector2(vector.x, vector.y);
         }*/
-        var intersections = getIntersections(event.clientX, event.clientY);
+        var intersections = getIntersections(event);
         var inners = intersections.filter(function(x) { return x.object === inner; });
         var outers = intersections.filter(function(x) { return x.object === outer; });
         var innerIntersection = null;
         var outerIntersection = null;
         if(inners.length > 0) innerIntersection = inners[0];
         if(outers.length > 0) outerIntersection = outers[0];
+        var mouse = getMousePosition(event);
         var delta = new THREE.Vector2(
-          event.clientX - startConfig.mouse.x,
-          event.clientY - startConfig.mouse.y
+          mouse.x - startConfig.mouse.x,
+          mouse.y - startConfig.mouse.y
         );
         var camera = parentCtrl.getCamera();
         var startVector, endVector;
@@ -116,15 +133,20 @@ angular.module('beads3d').directive('threejsArcBallControls', function() {
               var pLocal = new THREE.Vector3(delta.x, delta.y, 0).normalize();
               pLocal.applyMatrix4(camera.matrixWorld);
               endVector = pLocal;
+              return;
             }
-            startVector = startConfig.vector;
+            startVector = startConfig.vector.clone();
             startVector.normalize();
             endVector.normalize();
             var quaternion = new THREE.Quaternion();
-            quaternion.setFromUnitVectors(endVector, startVector);
+            quaternion.setFromUnitVectors(startVector, endVector);
             var newRotation = new THREE.Quaternion().setFromEuler(startConfig.rotation);
-            newRotation.multiply(quaternion);
-            $scope.rotation = new THREE.Euler().setFromQuaternion(newRotation);
+            quaternion.multiply(newRotation);
+            $scope.rotation = new THREE.Euler().setFromQuaternion(quaternion);
+            
+            $scope.start = startVector;
+            $scope.end = endVector;
+            
             $scope.$apply();
             break;
           case States.PAN:
@@ -154,7 +176,6 @@ angular.module('beads3d').directive('threejsArcBallControls', function() {
       });
     },
     replace: true,
-    transclude: true,
-    template: '<span ng-transclude/>'
+    template: '<span/>'
   };
 });

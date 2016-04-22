@@ -21,6 +21,8 @@ angular.module('beads3d').directive('threejsControl', function() {
       };
       this.getWidth = function() { return div.clientWidth; };
       this.getHeight = function() { return div.clientHeight; };
+      this.getLeft = function() { return div.offsetLeft; };
+      this.getTop = function() { return div.offsetTop; };
     },
     link: function($scope, element, attr, controller) {
       var div = element[0];
@@ -35,13 +37,13 @@ angular.module('beads3d').directive('threejsControl', function() {
         });
       }
       function onWindowResize() {
-        camera.aspect = div.clientWidth / div.clientHeight;
+        camera.aspect = controller.getWidth() / controller.getHeight();
         camera.updateProjectionMatrix();
-        renderer.setSize(div.clientWidth, div.clientHeight);
+        renderer.setSize(controller.getWidth(), controller.getHeight());
       }
     
       //camera
-      camera = new THREE.PerspectiveCamera(45, div.clientWidth / div.clientHeight, 1, 2000);
+      camera = new THREE.PerspectiveCamera(45, controller.getWidth() / controller.getHeight(), 1, 2000);
       camera.position.set(2, 2, 2);
       camera.lookAt(new THREE.Vector3());
       

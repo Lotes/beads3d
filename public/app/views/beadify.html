@@ -1,11 +1,16 @@
 <wizard on-finish="next()" hide-indicators="true" template="app/views/wizard.html"> 
   <wz-step title="demo">
     <threejs-control is-loading="false" background-color="rgb(123,0,255)">
-      <threejs-arc-ball-controls rotation="rot"></threejs-arc-ball-controls>
+      <threejs-arc-ball-controls rotation="rot" start="camstart" end="camend"/>
       <threejs-layer>
+        <threejs-directional-light position="pos"></threejs-directional-light>
         <threejs-group rotation="rot" scale="mmmodelsca">
           <threejs-model model="mmmodel" position="mmmodelpos"></threejs-model>
         </threejs-group>
+      </threejs-layer>
+      <threejs-layer>
+        <threejs-line to="camstart" color="rgb(255,255,0)"/>
+        <threejs-line to="camend" color="rgb(0,255,255)"/>
       </threejs-layer>
     </threejs-control>
   </wz-step>
