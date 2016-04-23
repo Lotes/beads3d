@@ -16,6 +16,9 @@ angular.module('beads3d').directive('threejsArcBallControls', function($rootScop
         $scope.radius = 1;
     },
     link: function($scope, element, attr, parentCtrl) {
+      var ZOOM_MAX = 20;
+      var ZOOM_MIN = 1.5;
+      
       var scene = new THREE.Scene();
       var wrapper = new THREE.Object3D();
       scene.add(wrapper);
@@ -50,17 +53,23 @@ angular.module('beads3d').directive('threejsArcBallControls', function($rootScop
       var raycaster = new THREE.Raycaster();
       var pressed = false;
       var States = {
+        IDLE: -1,
         CAMERA: 0,
         ARCBALL: 1,
-        PAN: 2
+        PAN: 2,
+        PINCH: 3
       };
-      var state = States.CAMERA;
+      var state = States.IDLE;
       var startConfig;
-      function getMousePosition(event) {
+      function isTouchEvent(event) {
+        return /touch/i.test(event.type);
+      }
+      function getMousePosition(event, index) {
         var x, y;
-        if(/touch/i.test(event.type)) {
-          x = event.touches[0].clientX;
-          y = event.touches[0].clientY;
+        if(isTouchEvent(event)) {
+          if(index === undefined) index = 0;
+          x = event.touches[index].clientX;
+          y = event.touches[index].clientY;
         } else {
           x = event.clientX;
           y = event.clientY;
@@ -123,13 +132,24 @@ angular.module('beads3d').directive('threejsArcBallControls', function($rootScop
         return raycaster.intersectObjects([inner, outer]);
       }
       function touchStart(event) {
+        if(state === States.PINCH)
+          return;
         pressed = true;
         var intersection;
         var intersections = getIntersections(event);
         var inners = intersections.filter(function(x) { return x.object === inner; });
         var outers = intersections.filter(function(x) { return x.object === outer; });
         var mouse = getMousePosition(event);
-        if(inners.length > 0) {
+        var camera = parentCtrl.getCamera();
+        if(isTouchEvent(event) && event.touches.length >= 2) {
+          state = States.PINCH;
+          var secondMouse = getMousePosition(event, 1);
+          startConfig = {
+            position: camera.position.clone(),
+            pinchLength: Math.max(1, mouse.distanceTo(secondMouse)),
+            mouse: mouse
+          };
+        } else if(inners.length > 0) {
           state = States.ARCBALL;
           intersection = inners[0];
           startConfig = {
@@ -149,7 +169,6 @@ angular.module('beads3d').directive('threejsArcBallControls', function($rootScop
           };
         } else {
           state = States.CAMERA;
-          var camera = parentCtrl.getCamera();
           startConfig = {
             center: new THREE.Vector3(),
             vector: camera.position.clone(),
@@ -177,6 +196,14 @@ angular.module('beads3d').directive('threejsArcBallControls', function($rootScop
         var camera = parentCtrl.getCamera();
         var startVector, endVector;
         switch(state) {
+          case States.PINCH:
+            var secondMouse = getMousePosition(event, 1);
+            var newPinchLength = Math.max(1, mouse.distanceTo(secondMouse));
+            var oldDistance = startConfig.position.length();
+            var scale = startConfig.pinchLength / newPinchLength;
+            scale = Math.min(ZOOM_MAX/oldDistance, Math.max(ZOOM_MIN/oldDistance, scale));
+            camera.position.copy(startConfig.position.clone().multiplyScalar(scale));
+            break;
           case States.CAMERA:
             //old angles
             var v = startConfig.vector;
@@ -233,24 +260,37 @@ angular.module('beads3d').directive('threejsArcBallControls', function($rootScop
       }
       function touchEnd(event) {
         pressed = false;
+        state = States.IDLE;
+      }
+      function mouseWheel(event) {
+        if(pressed)
+          return;
+        var DELTA_TO_PIXEL_MULIPLIER = [1, 15, 15 * 30];
+        var delta = event.deltaY * DELTA_TO_PIXEL_MULIPLIER[event.deltaMode];
+        var camera = parentCtrl.getCamera();
+        var distance = camera.position.length();
+        var newDistance = Math.min(ZOOM_MAX, Math.max(ZOOM_MIN, distance + delta / 1000));
+        var zoom = newDistance / distance;
+        camera.position.multiplyScalar(zoom);
       }
       
-      //events
       parentCtrl.addLayer(scene);
-      parentCtrl.on('touchstart', touchStart);
-      parentCtrl.on('mousedown', touchStart);
-      parentCtrl.on('touchmove', touchMove);
-      parentCtrl.on('mousemove', touchMove);
-      parentCtrl.on('touchend', touchEnd);
-      parentCtrl.on('mouseup', touchEnd);
+      
+      //events
+      var events = {
+        touchstart: touchStart,
+        mousedown: touchStart,
+        touchmove: touchMove,
+        mousemove: touchMove,
+        touchend: touchEnd,
+        mouseup: touchEnd,
+        wheel: mouseWheel
+      };
+      for(var name in events)
+        parentCtrl.on(name, events[name]);
       $scope.$on('$destroy', function() { 
-        parentCtrl.removeLayer(scene);
-        parentCtrl.off('touchstart', touchStart);
-        parentCtrl.off('mousedown', touchStart);
-        parentCtrl.off('touchmove', touchMove);
-        parentCtrl.off('mousemove', touchMove);
-        parentCtrl.off('touchend', touchEnd);
-        parentCtrl.off('mouseup', touchEnd);
+        for(var name in events)
+          parentCtrl.off(name, events[name]);
       });
     },
     replace: true,
