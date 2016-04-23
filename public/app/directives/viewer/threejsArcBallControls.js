@@ -39,12 +39,14 @@ angular.module('beads3d').directive('threejsArcBallControls', function($rootScop
       function update() {
         if(outer != null) wrapper.remove(outer);
         if(inner != null) wrapper.remove(inner);
-        outer = createSphere($scope.radius * 1.2, 0xff0000);
-        inner = createSphere($scope.radius, 0x00ff00);
+        outer = createSphere($scope.radius * 1.2, 0xbbbbbb);
+        inner = createSphere($scope.radius, 0xaaaaaa);
       }
       
       $scope.$watch('radius', update);
       
+      var up = new THREE.Vector3(0, 1, 0);
+      var right = new THREE.Vector3(1, 0, 0);
       var raycaster = new THREE.Raycaster();
       var pressed = false;
       var States = {
@@ -150,7 +152,7 @@ angular.module('beads3d').directive('threejsArcBallControls', function($rootScop
           var camera = parentCtrl.getCamera();
           startConfig = {
             center: new THREE.Vector3(),
-            position: camera.position.clone(),
+            vector: camera.position.clone(),
             distance: camera.position.length(),
             mouse: mouse
           };
@@ -176,6 +178,28 @@ angular.module('beads3d').directive('threejsArcBallControls', function($rootScop
         var startVector, endVector;
         switch(state) {
           case States.CAMERA:
+            //old angles
+            var v = startConfig.vector;
+            var w = v.clone().sub(up.clone().multiplyScalar(v.dot(up)));
+            var alpha = v.angleTo(up);
+            var beta = w.angleTo(right);
+            //compute new angles
+            var ALPHA_LIMIT = Math.PI / 180 * 2;
+            var alphaNew = alpha - delta.y / parentCtrl.getHeight() * Math.PI;
+            alphaNew = Math.min(Math.PI - ALPHA_LIMIT, Math.max(ALPHA_LIMIT, alphaNew));
+            var betaNew = beta + delta.x / parentCtrl.getWidth() * Math.PI;
+            var distance = startConfig.distance;
+            //apply changes
+            var cosAlpha = Math.cos(alphaNew);
+            var sinAlpha = Math.sin(alphaNew);
+            var cosBeta = Math.cos(betaNew);
+            var sinBeta = Math.sin(betaNew);
+            camera.position.set(
+              distance * sinAlpha * cosBeta,
+              distance * cosAlpha,
+              distance * sinAlpha * sinBeta
+            );
+            camera.lookAt(startConfig.center);
             break;
           case States.ARCBALL:
             if(innerIntersection) {

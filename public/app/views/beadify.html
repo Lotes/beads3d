@@ -1,9 +1,11 @@
 <wizard on-finish="next()" hide-indicators="true" template="app/views/wizard.html"> 
   <wz-step title="demo">
-    <threejs-control is-loading="false" background-color="rgb(123,0,255)">
+    <threejs-control is-loading="false" background-color="rgb(255,255,255)">
       <threejs-arc-ball-controls rotation="rot" debug-from="camstart" debug-to="camend" radius="mmmodelradius"/>
       <threejs-layer>
         <threejs-directional-light position="pos"/>
+        <threejs-model model="mmmodelcube"/>
+        <threejs-axis-helper position="boxpos"/>
         <threejs-group rotation="rot" scale="mmmodelsca">
           <threejs-model model="mmmodel" position="mmmodelpos"/>
         </threejs-group>
