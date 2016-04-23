@@ -3,13 +3,17 @@ angular.module('beads3d').directive('threejsArcBallControls', function($rootScop
     restrict: 'E',
     scope: {
       rotation: '=?',
-      start: '=?',
-      end: '=?'
+      radius: '=?',
+      
+      debugFrom: '=?',
+      debugTo: '=?'
     },
     require: '^threejsControl',
     controller: function($scope) {
       if($scope.rotation === undefined) 
         $scope.rotation = new THREE.Euler(0, 0, 0, 'XYZ');
+      if($scope.radius === undefined) 
+        $scope.radius = 1;
     },
     link: function($scope, element, attr, parentCtrl) {
       var scene = new THREE.Scene();
@@ -29,8 +33,17 @@ angular.module('beads3d').directive('threejsArcBallControls', function($rootScop
         return result;
       }
     
-      var outer = createSphere(1.2, 0xff0000);
-      var inner = createSphere(1, 0x00ff00);
+      var outer = null;
+      var inner = null;
+      
+      function update() {
+        if(outer != null) wrapper.remove(outer);
+        if(inner != null) wrapper.remove(inner);
+        outer = createSphere($scope.radius * 1.2, 0xff0000);
+        inner = createSphere($scope.radius, 0x00ff00);
+      }
+      
+      $scope.$watch('radius', update);
       
       var raycaster = new THREE.Raycaster();
       var pressed = false;
@@ -42,16 +55,63 @@ angular.module('beads3d').directive('threejsArcBallControls', function($rootScop
       var state = States.CAMERA;
       var startConfig;
       function getMousePosition(event) {
-        if(/touch/i.test(event.type))
-          return new THREE.Vector2(
-            event.touches[0].clientX - parentCtrl.getLeft(),
-            event.touches[0].clientY - parentCtrl.getTop()
+        var x, y;
+        if(/touch/i.test(event.type)) {
+          x = event.touches[0].clientX;
+          y = event.touches[0].clientY;
+        } else {
+          x = event.clientX;
+          y = event.clientY;
+        }
+        return new THREE.Vector2(
+            x - parentCtrl.getLeft(),
+            y - parentCtrl.getTop()
           );
-        else
-          return new THREE.Vector2(
-            event.clientX - parentCtrl.getLeft(),
-            event.clientY - parentCtrl.getTop()
-          );
+      }
+      function worldToScreen(point) { //point: Vector3
+        //from: http://stackoverflow.com/questions/27409074/three-js-converting-3d-position-to-2d-screen-position-r69
+        var camera = parentCtrl.getCamera();
+        var widthHalf = 0.5 * parentCtrl.getWidth();
+        var heightHalf = 0.5 * parentCtrl.getHeight();
+        var vector = point.clone();
+        vector.project(camera);
+        vector.x = (vector.x * widthHalf) + widthHalf;
+        vector.y = -(vector.y * heightHalf) + heightHalf;
+        return new THREE.Vector2(vector.x, vector.y);
+      }
+      function screenToWorld(point, z) {
+        //from: http://stackoverflow.com/questions/13055214/mouse-canvas-x-y-to-three-js-world-x-y-z
+        var camera = parentCtrl.getCamera();
+        var vector = new THREE.Vector3(
+          (point.x/parentCtrl.getWidth()) * 2 - 1,
+          -(point.y/parentCtrl.getHeight()) * 2 + 1,
+          0.5 
+        );
+        vector.unproject(camera);
+        var dir = vector.sub(camera.position).normalize();
+        var distance = (z - camera.position.z) / dir.z;
+        return camera.position.clone().add(dir.multiplyScalar(distance));
+      }
+      function screenToWorldEx(point, refPoint) {
+        //point is the mouse pointer
+        //refPoint is a reference point in world space
+        //returns a worldPoint parallel to the front frustum plane on the same depth as the reference point
+        
+        //prepare
+        var camera = parentCtrl.getCamera();
+        var vector = new THREE.Vector3(
+          (point.x/parentCtrl.getWidth()) * 2 - 1,
+          -(point.y/parentCtrl.getHeight()) * 2 + 1,
+          0.5 
+        );
+        vector.unproject(camera);
+        var clickDir = vector.sub(camera.position).normalize();
+        var cameraDir = new THREE.Vector3(0, 0, -1);
+        cameraDir.applyQuaternion(camera.quaternion);
+        //compute
+        var planeConstant = cameraDir.dot(refPoint);
+        var distance = (planeConstant-cameraDir.dot(camera.position)) / (cameraDir.dot(clickDir));
+        return camera.position.clone().add(clickDir.multiplyScalar(distance));
       }
       function getIntersections(event) {
         var mouse = getMousePosition(event);
@@ -61,7 +121,6 @@ angular.module('beads3d').directive('threejsArcBallControls', function($rootScop
         return raycaster.intersectObjects([inner, outer]);
       }
       function touchStart(event) {
-        console.log(event);
         pressed = true;
         var intersection;
         var intersections = getIntersections(event);
@@ -101,14 +160,6 @@ angular.module('beads3d').directive('threejsArcBallControls', function($rootScop
         if(!pressed)
           return;
         event.preventDefault();
-        /*function toScreenPosition(vector) { //vector: THREE.Vector3
-          var widthHalf = 0.5 * parentCtrl.getWidth();
-          var heightHalf = 0.5 * parentCtrl.getHeight();
-          vector.project(parentCtrl.getCamera());
-          vector.x = ( vector.x * widthHalf ) + widthHalf;
-          vector.y = - ( vector.y * heightHalf ) + heightHalf;
-          return new THREE.Vector2(vector.x, vector.y);
-        }*/
         var intersections = getIntersections(event);
         var inners = intersections.filter(function(x) { return x.object === inner; });
         var outers = intersections.filter(function(x) { return x.object === outer; });
@@ -130,10 +181,7 @@ angular.module('beads3d').directive('threejsArcBallControls', function($rootScop
             if(innerIntersection) {
               endVector = innerIntersection.point.clone().sub(innerIntersection.object.position);
             } else {
-              var pLocal = new THREE.Vector3(delta.x, delta.y, 0).normalize();
-              pLocal.applyMatrix4(camera.matrixWorld);
-              endVector = pLocal;
-              return;
+              endVector = screenToWorldEx(mouse, inner.position);
             }
             startVector = startConfig.vector.clone();
             startVector.normalize();
@@ -143,13 +191,19 @@ angular.module('beads3d').directive('threejsArcBallControls', function($rootScop
             var newRotation = new THREE.Quaternion().setFromEuler(startConfig.rotation);
             quaternion.multiply(newRotation);
             $scope.rotation = new THREE.Euler().setFromQuaternion(quaternion);
-            
-            $scope.start = startVector;
-            $scope.end = endVector;
-            
             $scope.$apply();
             break;
           case States.PAN:
+            startVector = screenToWorldEx(startConfig.mouse, inner.position);
+            endVector = screenToWorldEx(mouse, inner.position);
+            startVector.normalize();
+            endVector.normalize();
+            var quaternion = new THREE.Quaternion();
+            quaternion.setFromUnitVectors(startVector, endVector);
+            var newRotation = new THREE.Quaternion().setFromEuler(startConfig.rotation);
+            quaternion.multiply(newRotation);
+            $scope.rotation = new THREE.Euler().setFromQuaternion(quaternion);
+            $scope.$apply();
             break;
         }
       }
