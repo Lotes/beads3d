@@ -1,12 +1,10 @@
-angular.module('beads3d').directive('threejsArcBallControls', function($rootScope) {
+angular.module('beads3d').directive('threejsArcBallControls', function($timeout) {
   return {
     restrict: 'E',
     scope: {
       rotation: '=?',
       radius: '=?',
-      
-      debugFrom: '=?',
-      debugTo: '=?'
+      onCameraChange: '&'
     },
     require: '^threejsControl',
     controller: function($scope) {
@@ -61,6 +59,9 @@ angular.module('beads3d').directive('threejsArcBallControls', function($rootScop
       };
       var state = States.IDLE;
       var startConfig;
+      function notifyCameraChange() {
+        $scope.onCameraChange({ $camera: parentCtrl.getCamera() });
+      }
       function isTouchEvent(event) {
         return /touch/i.test(event.type);
       }
@@ -132,8 +133,6 @@ angular.module('beads3d').directive('threejsArcBallControls', function($rootScop
         return raycaster.intersectObjects([inner, outer]);
       }
       function touchStart(event) {
-        if(state === States.PINCH)
-          return;
         pressed = true;
         var intersection;
         var intersections = getIntersections(event);
@@ -203,6 +202,7 @@ angular.module('beads3d').directive('threejsArcBallControls', function($rootScop
             var scale = startConfig.pinchLength / newPinchLength;
             scale = Math.min(ZOOM_MAX/oldDistance, Math.max(ZOOM_MIN/oldDistance, scale));
             camera.position.copy(startConfig.position.clone().multiplyScalar(scale));
+            notifyCameraChange();
             break;
           case States.CAMERA:
             //old angles
@@ -227,6 +227,7 @@ angular.module('beads3d').directive('threejsArcBallControls', function($rootScop
               distance * sinAlpha * sinBeta
             );
             camera.lookAt(startConfig.center);
+            notifyCameraChange();
             break;
           case States.ARCBALL:
             if(innerIntersection) {
@@ -272,6 +273,7 @@ angular.module('beads3d').directive('threejsArcBallControls', function($rootScop
         var newDistance = Math.min(ZOOM_MAX, Math.max(ZOOM_MIN, distance + delta / 1000));
         var zoom = newDistance / distance;
         camera.position.multiplyScalar(zoom);
+        notifyCameraChange();
       }
       
       parentCtrl.addLayer(scene);
@@ -292,6 +294,8 @@ angular.module('beads3d').directive('threejsArcBallControls', function($rootScop
         for(var name in events)
           parentCtrl.off(name, events[name]);
       });
+      
+      $timeout(notifyCameraChange, 100);
     },
     replace: true,
     template: '<span/>'

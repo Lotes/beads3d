@@ -21,31 +21,32 @@ angular.module('beads3d').directive('threejsControl', function() {
       };
       this.getWidth = function() { return div.clientWidth; };
       this.getHeight = function() { return div.clientHeight; };
+      //camera
+      $scope.camera = new THREE.PerspectiveCamera(45, this.getWidth() / this.getHeight(), 1, 2000);
+      $scope.camera.position.set(2, 2, 2);
+      $scope.camera.lookAt(new THREE.Vector3());
+      //helpers
+      this.getCamera = function() { return $scope.camera; };
       this.getLeft = function() { return div.offsetLeft; };
       this.getTop = function() { return div.offsetTop; };
     },
     link: function($scope, element, attr, controller) {
       var div = element[0];
-      var camera, renderer;
+      var renderer;
       
       function animate() {
         requestAnimationFrame(animate);
         renderer.clearTarget(null, true, false, false);
         $scope.layers.forEach(function(layer) {
           renderer.clearTarget(null, false, true, true);
-          renderer.render(layer, camera);
+          renderer.render(layer, $scope.camera);
         });
       }
       function onWindowResize() {
-        camera.aspect = controller.getWidth() / controller.getHeight();
-        camera.updateProjectionMatrix();
+        $scope.camera.aspect = controller.getWidth() / controller.getHeight();
+        $scope.camera.updateProjectionMatrix();
         renderer.setSize(controller.getWidth(), controller.getHeight());
       }
-    
-      //camera
-      camera = new THREE.PerspectiveCamera(45, controller.getWidth() / controller.getHeight(), 1, 2000);
-      camera.position.set(2, 2, 2);
-      camera.lookAt(new THREE.Vector3());
       
       //renderer
       renderer = new THREE.WebGLRenderer({
@@ -61,9 +62,6 @@ angular.module('beads3d').directive('threejsControl', function() {
       
       //window events
       window.addEventListener('resize', onWindowResize, false);
-      
-      //helpers
-      controller.getCamera = function() { return camera; };
       
       //start animation loop
       animate();
