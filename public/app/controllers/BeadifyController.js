@@ -8,6 +8,7 @@ angular.module('beads3d').controller('BeadifyController', function($scope, $loca
   $scope.mmmodelsca = new THREE.Vector3(1,1,1);
   $scope.mmmodelradius = 1;
   $scope.mmmodelcube = null;
+  $scope.loading = true;
   $scope.boxpos = new THREE.Vector3(-0.5, -0.5, -0.5);
   $scope.light1pos = new THREE.Vector3(0,0,0);
   $scope.light2pos = new THREE.Vector3(0,0,0);
@@ -38,22 +39,12 @@ angular.module('beads3d').controller('BeadifyController', function($scope, $loca
       $scope.mmmodel = obj;
       $scope.mmmodelpos = new THREE.Vector3(-bbox.min.x-size.x/2, -bbox.min.y-size.y/2, -bbox.min.z-size.z/2);
       $scope.mmmodelsca = new THREE.Vector3(scale, scale, scale);
-      /*
-      //TOOOO SLOW
-      var bsphere = ThreeJSHelpers.getBoundingSphereFromObject(obj);
-      var scale = 1/(bsphere.radius);
-      loader.model.scale.set(scale, scale, scale);
-      $scope.mmmodel = obj;
-      updateTransformerScene();
-      $scope.mmmodelpos = bsphere.center.clone().negate();
-      $scope.mmmodelsca = new THREE.Vector3(scale, scale, scale);
-      $scope.mmmodelradius = 1;
-      */
+      $scope.loading = false;
     });
   Loader.loadOBJ('/utils/invertedCube.obj')
     .then(function(obj) {
       var material = new THREE.MeshLambertMaterial({
-        color: 0xcccccc,
+        color: 0x808080,
         transparent: true,
         opacity: 0.1
       });

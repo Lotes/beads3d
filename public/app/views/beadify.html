@@ -1,6 +1,6 @@
 <wizard on-finish="next()" hide-indicators="true" template="app/views/wizard.html"> 
-  <wz-step title="demo">
-    <threejs-control is-loading="false" background-color="rgb(255,255,255)">
+  <wz-step>
+    <threejs-control is-loading="loading" background-color="rgb(255,255,255)">
       <threejs-arc-ball-controls rotation="rot" radius="mmmodelradius" on-camera-change="cameraChange($camera)"/>
       <threejs-layer>
         <threejs-directional-light position="light1pos"/>
@@ -11,10 +11,6 @@
           <threejs-model model="mmmodel" position="mmmodelpos"/>
         </threejs-group>
       </threejs-layer>
-      <!--threejs-layer>
-        <threejs-line to="camstart" color="rgb(255,255,0)"/>
-        <threejs-line to="camend" color="rgb(0,255,255)"/>
-      </threejs-layer-->
     </threejs-control>
   </wz-step>
   
