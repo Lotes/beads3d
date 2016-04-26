@@ -9,18 +9,28 @@ Ideas
  * [ ] OpenShift script
  * [X] Passport for Google
  * [ ] URL upload
+ × [ ] social share buttons
+ × [ ] gallery
  * save voxel output packed as PNG files + JSON description
+ × [ ] logo and a GOOD name
 
 Client
 ------
- * split voxelify step (BeadifyController)
- * support voxelifying and slicing (via voxelifying)
+ * [ ] split voxelify step (BeadifyController)
+   × select/upload
+     × rotate
+     × slice
+     × edit
+     × save and export
+ * [ ] support voxelifying and slicing (via voxelifying)
+ × [ ] material style
  
 Server
 ------
  * more RESTful web API
    * resources
-     * [ ] uploads
+     * [X] uploads
+       × [ ] shared uploads
      * [X] sessions
      * [X] users
        * [ ] followers
