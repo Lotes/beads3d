@@ -20,6 +20,28 @@
  
 using namespace std;
 
+void save(Voxels* voxels, char* fileName) {
+  int size = voxels->size();
+  int width = size * size;
+  FIBITMAP* bitmap = FreeImage_Allocate(width, size, 32);
+  FreeImage_SetTransparent(bitmap, true);
+  if(bitmap) {
+    for(int y=0; y<size; y++)
+    for(int x=0; x<size; x++)
+    for(int z=0; z<size; z++) {
+      auto color = voxels->get(x, y, z);
+      RGBQUAD pixel;
+      pixel.rgbRed = color.r();
+      pixel.rgbGreen = color.g();
+      pixel.rgbBlue = color.b();
+      pixel.rgbReserved = color.isTransparent() ? 0 : 255;
+      FreeImage_SetPixelColor(bitmap, x + y*size, z, &pixel);  
+    }
+    FreeImage_Save(FIF_PNG, bitmap, fileName, 0);
+    FreeImage_Unload(bitmap);
+  }
+}
+
 void voxelifyVertex(FIBITMAP* image, const Vertex& vertex, Voxels& result) {
   int size = result.size();
   Vector3<int> coords(
@@ -34,7 +56,7 @@ void voxelifyVertex(FIBITMAP* image, const Vertex& vertex, Voxels& result) {
     int x = (int)((width-1) * vertex.u);
     int y = (int)((height-1) * vertex.v);
     FreeImage_GetPixelColor(image, x, y, &color);  
-    result.add(coords.x, coords.y, coords.z, Color(color.rgbRed, color.rgbGreen, color.rgbBlue));
+    result.add(coords.x, coords.y, coords.z, color.rgbRed, color.rgbGreen, color.rgbBlue);
   }
 }
 
@@ -74,7 +96,8 @@ map<string, FIBITMAP*> loadTextures(const vector<Material>& libraries) {
       auto relative = it->second;
       boost::replace_all(relative, "\\", "/");
       imagePath /= relative;
-      auto handle = FreeImage_Load(FIF_PNG, imagePath.string().c_str(), 0);
+      auto handle = FreeImage_Load(FIF_PNG, imagePath.string().c_str(), PNG_DEFAULT);
+      handle = FreeImage_ConvertTo32Bits(handle);
       result[materialName] = handle;
     }
   }
@@ -82,15 +105,15 @@ map<string, FIBITMAP*> loadTextures(const vector<Material>& libraries) {
 }
 
 int main(int argc, char *argv[]) {
-	if(argc < 3) {
-		cout << "Usage: voxelify <obj file> <size> [<output file>]" << endl;
+	if(argc < 4) {
+		cout << "Usage: voxelify <obj file> <size> <output file>" << endl;
 		return 1;
 	}
 	
 	//config
 	int size = atoi(argv[2]);
 	char* inputFileName = argv[1];
-	char* outputFileName = argc == 3 ? 0 : argv[3];
+	char* outputFileName = argv[3];
 	
 	//preparation
 	Voxels result(size);
@@ -115,12 +138,6 @@ int main(int argc, char *argv[]) {
   }
   
   //print
-	if(outputFileName) {
-		ofstream out(outputFileName);
-		out << result.toString();
-		out.close();
-	}
-	else
-		cout << result.toString();
+  save(&result, outputFileName);;
 	return 0;
 }
