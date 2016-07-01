@@ -21,7 +21,17 @@
       </button>
     </div>
     <div class="col-sm-6 fill">
-      <viewer object="model" is-loading="modelIsLoading"></viewer>
+      <threejs-control is-loading="modelIsLoading" background-color="rgb(255,255,255)">
+        <threejs-arc-ball-controls rotation="rot" radius="mmmodelradius" on-camera-change="cameraChange($camera)"/>
+        <threejs-layer>
+          <threejs-directional-light position="light1pos"/>
+          <threejs-directional-light position="light2pos"/>
+          <threejs-axis-helper position="boxpos"/>
+          <threejs-group scale="mmmodelsca">
+            <threejs-model model="model" position="mmmodelpos"/>
+          </threejs-group>
+        </threejs-layer>
+      </threejs-control>
     </div>
   </div>
 </div>
